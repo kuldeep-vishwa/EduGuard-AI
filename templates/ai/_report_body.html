@@ -1,0 +1,288 @@
+<!-- ── AI Report Body – shared include for student/faculty/admin layouts ── -->
+<!-- Header Row -->
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+    <h4 class="mb-0"><i class="bi bi-cpu text-primary"></i> AI Academic Report</h4>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('ai.ai_report', student_id=student.id, refresh=1) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-clockwise"></i> Refresh AI
+        </a>
+        <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-printer"></i> Print
+        </button>
+        <button onclick="downloadPDF()" class="btn btn-primary btn-sm">
+            <i class="bi bi-download"></i> Download PDF
+        </button>
+    </div>
+</div>
+
+<!-- Report Header Banner -->
+<div class="ai-report-header mb-4" id="reportContent">
+    <div class="row align-items-center">
+        <div class="col-md-7">
+            <h3 class="mb-1">{{ student.full_name }}</h3>
+            <p class="mb-1 opacity-75">
+                {{ student.student_id }}
+                {% if student.department %} · {{ student.department.name }}{% endif %}
+                · Semester {{ student.current_semester }}
+            </p>
+            <p class="mb-0 opacity-75">
+                <i class="bi bi-calendar"></i> Report Generated: Today
+            </p>
+        </div>
+        <div class="col-md-5 text-center">
+            <div class="health-gauge-wrap">
+                <div class="health-gauge-circle gauge-{{ health.risk_level }}">
+                    {{ health.score }}
+                    <small style="font-size:0.5rem;opacity:0.85">/100</small>
+                </div>
+                <div>
+                    <span class="badge risk-badge bg-{{ 'success' if health.risk_level == 'low' else 'warning text-dark' if health.risk_level == 'medium' else 'danger' }}">
+                        <i class="bi bi-{{ 'shield-check' if health.risk_level == 'low' else 'exclamation-triangle' if health.risk_level == 'medium' else 'x-circle' }}"></i>
+                        {{ health.risk_level | upper }} RISK
+                    </span>
+                </div>
+                <small class="mt-1 d-block" style="opacity:0.8;">Academic Health Score</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+
+    <!-- ── Academic Health Score Breakdown ─────────────────────────── -->
+    <div class="col-lg-5">
+        <div class="section-card h-100">
+            <h6><i class="bi bi-bar-chart-fill text-primary me-1"></i>Health Score Breakdown</h6>
+            {% set bd = health.breakdown %}
+            {% for key, item in bd.items() %}
+            <div class="breakdown-row">
+                <div class="breakdown-label">{{ key.replace('_', ' ').title() }}</div>
+                <div class="breakdown-bar">
+                    <div class="progress" style="height:8px;">
+                        <div class="progress-bar bg-{{ 'success' if item.value >= 75 else 'warning' if item.value >= 50 else 'danger' }}"
+                             style="width:{{ item.value }}%"></div>
+                    </div>
+                </div>
+                <div class="breakdown-val">{{ item.contribution }}</div>
+            </div>
+            {% endfor %}
+            <hr class="my-2">
+            <div class="d-flex justify-content-between fw-semibold">
+                <span>Total Health Score</span>
+                <span class="text-{{ 'success' if health.risk_level == 'low' else 'warning' if health.risk_level == 'medium' else 'danger' }}">
+                    {{ health.score }} / 100
+                </span>
+            </div>
+            <div class="mt-2">
+                <div class="progress" style="height:12px;">
+                    <div class="progress-bar bg-{{ health.color }} progress-bar-striped"
+                         style="width:{{ health.score }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Risk Indicator Stats ────────────────────────────────────── -->
+    <div class="col-lg-7">
+        <div class="row g-3">
+            <div class="col-6">
+                <div class="section-card text-center">
+                    <h6><i class="bi bi-activity text-danger me-1"></i>Risk Percentage</h6>
+                    <div class="display-6 fw-bold text-{{ 'success' if health.risk_level == 'low' else 'warning' if health.risk_level == 'medium' else 'danger' }}">
+                        {{ health.risk_pct }}%
+                    </div>
+                    <small class="text-muted">Dropout / Failure Risk</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="section-card text-center">
+                    <h6><i class="bi bi-clipboard-data text-info me-1"></i>Assessments</h6>
+                    <div class="display-6 fw-bold text-primary">{{ all_attempts | length }}</div>
+                    <small class="text-muted">Avg: {{ avg_score }}%</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="section-card text-center">
+                    <h6><i class="bi bi-calendar-check text-success me-1"></i>Attendance</h6>
+                    <div class="display-6 fw-bold text-{{ 'success' if att_pct >= 75 else 'warning' if att_pct >= 60 else 'danger' }}">
+                        {{ att_pct }}%
+                    </div>
+                    <small class="text-muted">{{ present }}/{{ total_att }} classes</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="section-card text-center">
+                    <h6><i class="bi bi-star-fill text-warning me-1"></i>Faculty Rating</h6>
+                    <div class="display-6 fw-bold text-warning">{{ avg_feedback }}<small style="font-size:1rem">/5</small></div>
+                    <small class="text-muted">{{ all_feedbacks | length }} feedbacks</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── AI Risk Analysis Sections ──────────────────────────────── -->
+    {% if sections %}
+        {% set section_icons = {
+            'RISK_LEVEL': 'shield-exclamation text-danger',
+            'DROPOUT_RISK': 'x-circle text-danger',
+            'ACADEMIC_WEAKNESSES': 'exclamation-triangle text-warning',
+            'LEARNING_BEHAVIOR_SUMMARY': 'journal-text text-info',
+            'IMPROVEMENT_PRIORITY': 'list-check text-primary',
+            'SUGGESTED_WEEKLY_STUDY_PLAN': 'calendar-week text-success'
+        } %}
+        {% for key, content in sections.items() %}
+        <div class="col-md-6">
+            <div class="section-card">
+                <h6>
+                    <i class="bi bi-{{ section_icons.get(key, 'cpu text-primary') }} me-1"></i>
+                    {{ key.replace('_', ' ').title() }}
+                </h6>
+                <p style="white-space:pre-line; margin:0;">{{ content }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            AI risk analysis will appear here.
+            <a href="{{ url_for('ai.ai_report', student_id=student.id, refresh=1) }}" class="alert-link">Generate now</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Assessment History ──────────────────────────────────────── -->
+    <div class="col-12">
+        <div class="section-card">
+            <h6><i class="bi bi-clipboard-check text-primary me-1"></i>Assessment Summary</h6>
+            {% if all_attempts %}
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>Assessment</th><th>Subject</th><th>Score</th><th>%</th><th>Date</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for a in all_attempts[:10] %}
+                        <tr>
+                            <td>{{ a.assessment.title }}</td>
+                            <td>{{ a.assessment.subject.name }}</td>
+                            <td>{{ a.score }}/{{ a.assessment.max_marks }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if a.percentage >= 75 else 'warning text-dark' if a.percentage >= 50 else 'danger' }}">
+                                    {{ a.percentage }}%
+                                </span>
+                            </td>
+                            <td>{{ a.submitted_at | datefmt if a.submitted_at else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No assessments taken yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ── Faculty Feedback Summary ──────────────────────────────── -->
+    {% if all_feedbacks %}
+    <div class="col-md-6">
+        <div class="section-card">
+            <h6><i class="bi bi-chat-square-text text-info me-1"></i>Faculty Feedback Summary</h6>
+            {% for fb in all_feedbacks[:3] %}
+            <div class="mb-2 pb-2 border-bottom">
+                <div class="d-flex justify-content-between">
+                    <small class="fw-semibold">{{ fb.faculty.full_name }}</small>
+                    <span class="badge bg-primary">{{ fb.overall_rating }}/5</span>
+                </div>
+                <div class="row mt-1">
+                    <div class="col-6"><small class="text-muted">Participation: {{ fb.class_participation }}/5</small></div>
+                    <div class="col-6"><small class="text-muted">Understanding: {{ fb.subject_understanding }}/5</small></div>
+                    <div class="col-6"><small class="text-muted">Assignment: {{ fb.assignment_quality }}/5</small></div>
+                    <div class="col-6"><small class="text-muted">Progress: {{ fb.learning_progress }}/5</small></div>
+                </div>
+                {% if fb.comments %}
+                <small class="text-muted fst-italic">"{{ fb.comments[:100] }}{% if fb.comments|length > 100 %}...{% endif %}"</small>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Academic Records ──────────────────────────────────────── -->
+    {% if academic_records %}
+    <div class="col-md-6">
+        <div class="section-card">
+            <h6><i class="bi bi-mortarboard text-success me-1"></i>Academic Records (GPA History)</h6>
+            {% for r in academic_records %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <span class="fw-semibold">Sem {{ r.semester }}</span>
+                    {% if r.academic_year %}<small class="text-muted"> · {{ r.academic_year }}</small>{% endif %}
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-{{ 'success' if r.gpa >= 7 else 'warning text-dark' if r.gpa >= 5 else 'danger' }}">
+                        GPA {{ r.gpa }}
+                    </span>
+                    {% if r.backlogs > 0 %}
+                    <span class="badge bg-danger ms-1">{{ r.backlogs }} Backlog</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Latest AI Assessment Analysis ─────────────────────────── -->
+    {% if latest_analysis %}
+    <div class="col-12">
+        <div class="section-card">
+            <h6><i class="bi bi-robot text-primary me-1"></i>Latest AI Assessment Analysis
+                <small class="text-muted fw-normal">({{ latest_analysis.generated_at | datefmt }})</small>
+            </h6>
+            {% set as_sections = latest_analysis.get_sections() %}
+            {% if as_sections %}
+            <div class="row g-2">
+                {% for key in ['OVERALL_ASSESSMENT_SUMMARY','WEAK_TOPICS','STRONG_TOPICS','PERSONALIZED_STUDY_RECOMMENDATIONS','MOTIVATION_MESSAGE'] %}
+                {% if key in as_sections %}
+                <div class="col-md-6">
+                    <div class="p-2 bg-light rounded">
+                        <small class="text-muted fw-bold d-block mb-1">{{ key.replace('_',' ').title() }}</small>
+                        <p class="mb-0" style="font-size:0.88rem;white-space:pre-line;">{{ as_sections[key][:250] }}{% if as_sections[key]|length > 250 %}...{% endif %}</p>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="white-space:pre-line; font-size:0.9rem;">{{ latest_analysis.analysis_text[:600] }}...</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Charts ──────────────────────────────────────────────────── -->
+    <div class="col-lg-6">
+        <div class="section-card">
+            <h6><i class="bi bi-pie-chart text-warning me-1"></i>Risk Distribution</h6>
+            <canvas id="riskChart" height="180"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="section-card">
+            <h6><i class="bi bi-bar-chart text-info me-1"></i>Health Score Components</h6>
+            <canvas id="componentsChart" height="180"></canvas>
+        </div>
+    </div>
+    {% if all_attempts %}
+    <div class="col-12">
+        <div class="section-card">
+            <h6><i class="bi bi-graph-up text-success me-1"></i>Assessment Performance Trend</h6>
+            <canvas id="trendChart" height="100"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
+</div><!-- /row -->

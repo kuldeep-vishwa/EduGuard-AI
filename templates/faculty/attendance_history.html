@@ -1,0 +1,63 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-clock-history text-primary"></i> Attendance History</h4>
+    <a href="{{ url_for('faculty.attendance') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-calendar-plus"></i> Mark Attendance
+    </a>
+</div>
+
+<!-- Filters -->
+<form method="GET" class="card shadow-sm mb-4">
+    <div class="card-body py-2">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <select class="form-select" name="subject_id">
+                    <option value="">All Subjects</option>
+                    {% for subj in subjects %}
+                    <option value="{{ subj.id }}" {{ 'selected' if request.args.get('subject_id', type=int) == subj.id }}>{{ subj.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input type="date" class="form-control" name="date" value="{{ request.args.get('date', '') }}">
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Filter
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>Date</th><th>Subject</th><th>Student</th><th>Status</th><th>Remarks</th></tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td>{{ r.date | datefmt }}</td>
+                        <td>{{ r.subject.name }}</td>
+                        <td>{{ r.student.full_name }} <small class="text-muted">({{ r.student.student_id }})</small></td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if r.status == 'present' else 'danger' if r.status == 'absent' else 'warning' }}">
+                                {{ r.status.title() }}
+                            </span>
+                        </td>
+                        <td>{{ r.remarks or '—' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-3">No attendance records found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

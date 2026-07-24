@@ -1,0 +1,75 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-journal-bookmark text-primary"></i> Subjects</h4>
+    <a href="{{ url_for('admin.add_subject') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Add Subject
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Subject</th>
+                        <th>Code</th>
+                        <th>Department</th>
+                        <th>Semester</th>
+                        <th>Credits</th>
+                        <th>Units</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subj in subjects %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><strong>{{ subj.name }}</strong></td>
+                        <td><span class="badge bg-secondary">{{ subj.code }}</span></td>
+                        <td>{{ subj.department.name }}</td>
+                        <td>{{ subj.semester or '—' }}</td>
+                        <td>{{ subj.credits }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.subject_units', subj_id=subj.id) }}" class="badge bg-info text-decoration-none">
+                                {{ subj.units.count() }} Units
+                            </a>
+                        </td>
+                        <td>
+                            {% if subj.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('admin.edit_subject', subj_id=subj.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{{ url_for('admin.subject_units', subj_id=subj.id) }}" 
+                               class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-list-nested"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('admin.delete_subject', subj_id=subj.id) }}" 
+                                  class="d-inline" onsubmit="return confirm('Deactivate this subject?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="text-center text-muted py-4">No subjects found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Flask
+instance/
+*.db
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Cache
+.pytest_cache/
+.mypy_cache/
+.cache/
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Uploaded Files (optional)
+uploads/
+temp/
+
+# Generated Reports (optional)
+reports/
+
+# Large ML Files
+*.pt
+*.pth
+*.onnx
+*.h5
+*.ckpt
+
+# Secrets
+*.pem
+*.key

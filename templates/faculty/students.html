@@ -1,0 +1,68 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-people text-primary"></i> Students</h4>
+    <a href="{{ url_for('faculty.export_class_excel') }}" class="btn btn-success">
+        <i class="bi bi-file-excel"></i> Export Class to Excel
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Student ID</th>
+                        <th>Department</th>
+                        <th>Semester</th>
+                        <th>Attendance</th>
+                        <th>AI Risk</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ student.full_name }}</td>
+                        <td><code>{{ student.student_id }}</code></td>
+                        <td>{{ student.department.name if student.department else '—' }}</td>
+                        <td>{{ student.current_semester }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if student.attendance_percentage >= 75 else 'warning' if student.attendance_percentage >= 60 else 'danger' }}">
+                                {{ student.attendance_percentage }}%
+                            </span>
+                        </td>
+                        <td>
+                            {% if student.risk_level == 'high' %}
+                                <span class="badge bg-danger">High</span>
+                            {% elif student.risk_level == 'medium' %}
+                                <span class="badge bg-warning text-dark">Medium</span>
+                            {% elif student.risk_level == 'low' %}
+                                <span class="badge bg-success">Low</span>
+                            {% else %}
+                                <span class="badge bg-secondary">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('faculty.view_student', student_id=student.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                            <a href="{{ url_for('ai.ai_report', student_id=student.id) }}" class="btn btn-sm btn-outline-secondary" title="AI Report">
+                                <i class="bi bi-cpu"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">No students found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

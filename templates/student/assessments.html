@@ -1,0 +1,85 @@
+{% extends "student/student_layout.html" %}
+
+{% block content %}
+<h4 class="mb-4"><i class="bi bi-clipboard-check text-primary"></i> Assessments</h4>
+
+<!-- Upcoming -->
+{% if upcoming %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-calendar-event text-warning"></i> Upcoming Assessments</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>Title</th><th>Subject</th><th>Date</th><th>Duration</th><th>Questions</th></tr>
+                </thead>
+                <tbody>
+                    {% for a in upcoming %}
+                    <tr>
+                        <td><strong>{{ a.title }}</strong></td>
+                        <td>{{ a.subject.name }}</td>
+                        <td>{{ a.scheduled_date | datefmt }}</td>
+                        <td>{{ a.duration_minutes }} min</td>
+                        <td>{{ a.total_questions }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Available Assessments -->
+<h5 class="mb-3">Available Assessments</h5>
+<div class="row g-3">
+    {% for a in all_assessments %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="card-title mb-0">{{ a.title }}</h6>
+                    {% if a.id in completed_ids %}
+                    <span class="badge bg-success">Completed</span>
+                    {% else %}
+                    <span class="badge bg-primary">Available</span>
+                    {% endif %}
+                </div>
+                <p class="text-muted small mb-2">{{ a.subject.name }}</p>
+                <div class="d-flex gap-3 text-muted small mb-3">
+                    <span><i class="bi bi-clock"></i> {{ a.duration_minutes }} min</span>
+                    <span><i class="bi bi-question-circle"></i> {{ a.total_questions }} Qs</span>
+                    <span><i class="bi bi-star"></i> {{ a.max_marks }} marks</span>
+                </div>
+                <div class="d-flex gap-1 mb-3">
+                    <span class="badge bg-success">Easy: {{ a.easy_count }}</span>
+                    <span class="badge bg-warning">Medium: {{ a.medium_count }}</span>
+                    <span class="badge bg-danger">Hard: {{ a.hard_count }}</span>
+                </div>
+                
+                {% if a.id in completed_ids %}
+                <button class="btn btn-outline-secondary btn-sm w-100" disabled>
+                    <i class="bi bi-check-circle"></i> Already Attempted
+                </button>
+                {% else %}
+                <a href="{{ url_for('student.start_assessment', assessment_id=a.id) }}" 
+                   class="btn btn-primary btn-sm w-100"
+                   onclick="return confirm('Start assessment: {{ a.title }}?\n{{ a.total_questions }} questions | {{ a.duration_minutes }} minutes')">
+                    <i class="bi bi-play-circle"></i> Start Assessment
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-clipboard-x fs-1 mb-2"></i>
+            <p>No assessments available right now.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

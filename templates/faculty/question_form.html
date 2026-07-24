@@ -1,0 +1,132 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <i class="bi bi-{{ 'pencil-square' if edit else 'plus-circle' }} text-primary"></i> {{ title }}
+    </h4>
+    <a href="{{ url_for('faculty.questions') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="POST" novalidate id="questionForm">
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    {{ form.subject_id.label(class="form-label fw-semibold") }}
+                    {{ form.subject_id(class="form-select", id="subjectSelect") }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    {{ form.unit_id.label(class="form-label fw-semibold") }}
+                    {{ form.unit_id(class="form-select", id="unitSelect") }}
+                </div>
+                <div class="col-md-2 mb-3">
+                    {{ form.question_type.label(class="form-label fw-semibold") }}
+                    {{ form.question_type(class="form-select", id="questionType") }}
+                </div>
+                <div class="col-md-2 mb-3">
+                    {{ form.difficulty.label(class="form-label fw-semibold") }}
+                    {{ form.difficulty(class="form-select") }}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.question_text.label(class="form-label fw-semibold") }}
+                {{ form.question_text(class="form-control" ~ (" is-invalid" if form.question_text.errors else ""), rows=3) }}
+                {% if form.question_text.errors %}<div class="invalid-feedback">{{ form.question_text.errors[0] }}</div>{% endif %}
+            </div>
+            
+            <!-- MCQ Options (shown for mcq type) -->
+            <div id="mcqOptions">
+                <h6 class="text-muted">Answer Options</h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.option_a.label(class="form-label fw-semibold") }}
+                        {{ form.option_a(class="form-control", placeholder="Option A") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.option_b.label(class="form-label fw-semibold") }}
+                        {{ form.option_b(class="form-control", placeholder="Option B") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.option_c.label(class="form-label fw-semibold") }}
+                        {{ form.option_c(class="form-control", placeholder="Option C (optional)") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.option_d.label(class="form-label fw-semibold") }}
+                        {{ form.option_d(class="form-control", placeholder="Option D (optional)") }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.correct_answer.label(class="form-label fw-semibold") }}
+                {{ form.correct_answer(class="form-control" ~ (" is-invalid" if form.correct_answer.errors else ""),
+                   id="correctAnswer", placeholder="For MCQ: a/b/c/d | True-False: true/false | Fill Blank: exact answer") }}
+                {% if form.correct_answer.errors %}<div class="invalid-feedback">{{ form.correct_answer.errors[0] }}</div>{% endif %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.explanation.label(class="form-label fw-semibold") }}
+                {{ form.explanation(class="form-control", rows=2, placeholder="Optional explanation...") }}
+            </div>
+            
+            <div class="mb-4 form-check form-switch">
+                {{ form.is_active(class="form-check-input") }}
+                {{ form.is_active.label(class="form-check-label") }}
+            </div>
+            
+            {{ form.submit(class="btn btn-primary px-4") }}
+            <a href="{{ url_for('faculty.questions') }}" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dynamic unit loading
+const subjectSelect = document.getElementById('subjectSelect');
+const unitSelect = document.getElementById('unitSelect');
+
+subjectSelect.addEventListener('change', function() {
+    const subjectId = this.value;
+    if (!subjectId) return;
+    
+    fetch(`/faculty/api/units/${subjectId}`)
+        .then(res => res.json())
+        .then(units => {
+            unitSelect.innerHTML = '';
+            units.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = u.name;
+                unitSelect.appendChild(opt);
+            });
+        });
+});
+
+// Show/hide MCQ options based on question type
+const questionTypeSelect = document.getElementById('questionType');
+const mcqOptions = document.getElementById('mcqOptions');
+const correctAnswerInput = document.getElementById('correctAnswer');
+
+questionTypeSelect.addEventListener('change', function() {
+    const type = this.value;
+    if (type === 'mcq') {
+        mcqOptions.style.display = 'block';
+        correctAnswerInput.placeholder = 'Enter: a, b, c, or d';
+    } else if (type === 'true_false') {
+        mcqOptions.style.display = 'none';
+        correctAnswerInput.placeholder = 'Enter: true or false';
+    } else {
+        mcqOptions.style.display = 'none';
+        correctAnswerInput.placeholder = 'Enter exact expected answer';
+    }
+});
+</script>
+{% endblock %}

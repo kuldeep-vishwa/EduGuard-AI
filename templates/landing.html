@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block body_content %}
+<div class="landing-page">
+    <!-- Hero Section -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="bi bi-shield-check"></i> EduGuard AI
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+            </a>
+        </div>
+    </nav>
+    
+    <div class="hero-section">
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-6 text-white">
+                    <h1 class="display-3 fw-bold mb-4">EduGuard AI</h1>
+                    <p class="lead mb-4">
+                        AI-Powered Student Early Warning & Academic Risk Detection System
+                    </p>
+                    <p class="mb-5">
+                        Intelligent academic monitoring platform that continuously collects and analyzes academic data 
+                        to identify at-risk students before they fail.
+                    </p>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-box-arrow-in-right"></i> Get Started
+                    </a>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card shadow-lg border-0 glass-card">
+                        <div class="card-body p-5">
+                            <h3 class="card-title mb-4">
+                                <i class="bi bi-bar-chart-line text-primary"></i> Key Features
+                            </h3>
+                            <ul class="feature-list">
+                                <li><i class="bi bi-check-circle-fill text-success"></i> Real-time Academic Monitoring</li>
+                                <li><i class="bi bi-check-circle-fill text-success"></i> Attendance Tracking</li>
+                                <li><i class="bi bi-check-circle-fill text-success"></i> Subject-wise Assessments</li>
+                                <li><i class="bi bi-check-circle-fill text-success"></i> Faculty Feedback System</li>
+                                <li><i class="bi bi-check-circle-fill text-success"></i> Assignment Performance Analysis</li>
+                                <li><i class="bi bi-check-circle-fill text-success"></i> Academic Risk Prediction (Phase 2)</li>
+                                <li><i class="bi bi-check-circle-fill text-success"></i> AI-Powered Recommendations (Phase 2)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="py-4 bg-dark text-white text-center">
+        <div class="container">
+            <p class="mb-0">&copy; {{ current_year }} EduGuard AI. All rights reserved.</p>
+        </div>
+    </footer>
+</div>
+
+<style>
+.landing-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.hero-section {
+    padding-top: 2rem;
+}
+.glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+}
+.feature-list {
+    list-style: none;
+    padding: 0;
+}
+.feature-list li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #eee;
+}
+.feature-list li:last-child {
+    border-bottom: none;
+}
+.feature-list i {
+    margin-right: 0.75rem;
+}
+</style>
+{% endblock %}

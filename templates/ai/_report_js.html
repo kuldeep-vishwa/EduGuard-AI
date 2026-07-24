@@ -1,0 +1,79 @@
+<script>
+// ── Risk Donut Chart ──────────────────────────────────────────────────────
+new Chart(document.getElementById('riskChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Health Score', 'Risk %'],
+        datasets: [{
+            data: [{{ health.score }}, {{ health.risk_pct }}],
+            backgroundColor: [
+                '{{ "#28a745" if health.risk_level == "low" else "#ffc107" if health.risk_level == "medium" else "#dc3545" }}',
+                '#e9ecef'
+            ],
+            borderWidth: 0,
+            hoverOffset: 8
+        }]
+    },
+    options: {
+        cutout: '72%',
+        plugins: {
+            legend: { position: 'bottom' },
+            tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed + '%' } }
+        }
+    }
+});
+
+// ── Health Components Bar Chart ──────────────────────────────────────────
+new Chart(document.getElementById('componentsChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Attendance','Assessment','Feedback','Assignment','GPA'],
+        datasets: [{
+            label: 'Score (0-100)',
+            data: [
+                {{ health.breakdown.attendance.value }},
+                {{ health.breakdown.assessment_score.value }},
+                {{ health.breakdown.faculty_feedback.value }},
+                {{ health.breakdown.assignment_score.value }},
+                {{ health.breakdown.previous_gpa.value }}
+            ],
+            backgroundColor: ['#667eea','#764ba2','#28a745','#ffc107','#17a2b8'],
+            borderRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } } },
+        plugins: { legend: { display: false } }
+    }
+});
+
+// ── Assessment Trend ──────────────────────────────────────────────────────
+{% if all_attempts %}
+new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+        labels: [{% for a in all_attempts[-10:] %}'{{ a.submitted_at.strftime("%d %b") if a.submitted_at else "" }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Score %',
+            data: [{% for a in all_attempts[-10:] %}{{ a.percentage }}{% if not loop.last %},{% endif %}{% endfor %}],
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102,126,234,0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } } },
+        plugins: { legend: { display: false } }
+    }
+});
+{% endif %}
+
+// ── PDF Download (uses browser print) ────────────────────────────────────
+function downloadPDF() {
+    window.print();
+}
+</script>

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block body_content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="text-center mb-4">
+            <i class="bi bi-shield-check auth-icon"></i>
+            <h2 class="fw-bold">EduGuard AI</h2>
+            <p class="text-muted">Academic Risk Detection System</p>
+        </div>
+        
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-3">
+                {{ form.username.label(class="form-label") }}
+                {{ form.username(class="form-control form-control-lg" ~ (" is-invalid" if form.username.errors else ""), placeholder="Username or Email") }}
+                {% if form.username.errors %}
+                    <div class="invalid-feedback">{{ form.username.errors[0] }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control form-control-lg" ~ (" is-invalid" if form.password.errors else ""), placeholder="Password") }}
+                {% if form.password.errors %}
+                    <div class="invalid-feedback">{{ form.password.errors[0] }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3 form-check">
+                {{ form.remember_me(class="form-check-input") }}
+                {{ form.remember_me.label(class="form-check-label") }}
+            </div>
+            
+            {{ form.submit(class="btn btn-primary btn-lg w-100") }}
+        </form>
+        
+        <div class="demo-creds mt-4">
+            <p class="text-muted small text-center mb-2 fw-semibold">Demo Credentials</p>
+            <div class="cred-row" onclick="fillCreds('admin','Admin@123')">
+                <span class="cred-badge admin-badge">Admin</span>
+                <code>admin</code>
+                <span class="cred-sep">/</span>
+                <code>Admin@123</code>
+            </div>
+            <div class="cred-row" onclick="fillCreds('faculty1','Faculty@123')">
+                <span class="cred-badge faculty-badge">Faculty</span>
+                <code>faculty1</code>
+                <span class="cred-sep">/</span>
+                <code>Faculty@123</code>
+            </div>
+            <div class="cred-row" onclick="fillCreds('student1','Student@123')">
+                <span class="cred-badge student-badge">Student</span>
+                <code>student1</code>
+                <span class="cred-sep">/</span>
+                <code>Student@123</code>
+            </div>
+            <p class="text-muted text-center mt-2" style="font-size:.72rem">
+                Click any row to auto-fill &nbsp;|&nbsp; Run <code>flask seed-demo</code> to create accounts
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.auth-container {
+    width: 100%;
+    max-width: 440px;
+    padding: 1rem;
+}
+.auth-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2.5rem 2rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.auth-icon {
+    font-size: 4rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+}
+/* Demo credentials panel */
+.demo-creds {
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+}
+.cred-row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .4rem .6rem;
+    border-radius: .5rem;
+    cursor: pointer;
+    transition: background .15s;
+    margin-bottom: .25rem;
+}
+.cred-row:hover { background: #f4f6ff; }
+.cred-badge {
+    font-size: .7rem;
+    font-weight: 700;
+    padding: .15rem .5rem;
+    border-radius: .3rem;
+    min-width: 56px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.admin-badge   { background:#dbeafe; color:#1e40af; }
+.faculty-badge { background:#d1fae5; color:#065f46; }
+.student-badge { background:#ede9fe; color:#5b21b6; }
+.cred-sep { color: #aaa; }
+</style>
+
+<script>
+function fillCreds(username, password) {
+    const u = document.querySelector('input[name="username"]');
+    const p = document.querySelector('input[name="password"]');
+    if (u) u.value = username;
+    if (p) p.value = password;
+    if (u) u.focus();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "student/student_layout.html" %}
+
+{% block content %}
+<h4 class="mb-4"><i class="bi bi-mortarboard text-primary"></i> Academic Records</h4>
+
+{% if records %}
+<!-- GPA Chart -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header"><h6 class="mb-0">GPA Progress</h6></div>
+    <div class="card-body">
+        <canvas id="gpaChart" height="100"></canvas>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Semester</th>
+                        <th>Year</th>
+                        <th>SGPA</th>
+                        <th>CGPA</th>
+                        <th>Credits (Earned/Total)</th>
+                        <th>Backlogs</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td><span class="badge bg-primary">Sem {{ r.semester }}</span></td>
+                        <td>{{ r.academic_year or '—' }}</td>
+                        <td><strong>{{ r.sgpa or r.gpa }}</strong></td>
+                        <td>{{ r.cgpa or '—' }}</td>
+                        <td>{{ r.earned_credits or '—' }}/{{ r.total_credits or '—' }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'danger' if r.backlogs > 0 else 'success' }}">
+                                {{ r.backlogs }} backlog{{ 's' if r.backlogs != 1 }}
+                            </span>
+                        </td>
+                        <td>{{ r.remarks or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-graph-up fs-1 mb-2"></i>
+    <p>No academic records available. Contact admin to add your GPA records.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if records %}
+<script>
+const gpaCtx = document.getElementById('gpaChart').getContext('2d');
+new Chart(gpaCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for r in records %}'Sem {{ r.semester }}'{% if not loop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'SGPA',
+            data: [{% for r in records %}{{ r.sgpa or r.gpa }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: 'rgba(102,126,234,0.7)',
+            borderColor: '#667eea',
+            borderWidth: 2,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: { min: 0, max: 10, ticks: { stepSize: 1 } }
+        },
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

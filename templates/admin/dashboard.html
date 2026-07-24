@@ -1,0 +1,318 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_students }}</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon"><i class="bi bi-person-workspace"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_faculty }}</div>
+                <div class="stat-label">Total Faculty</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon"><i class="bi bi-building"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_departments }}</div>
+                <div class="stat-label">Departments</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon"><i class="bi bi-journal-bookmark"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_subjects }}</div>
+                <div class="stat-label">Subjects</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-secondary">
+            <div class="stat-icon"><i class="bi bi-question-circle"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_questions }}</div>
+                <div class="stat-label">Questions</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-danger">
+            <div class="stat-icon"><i class="bi bi-clipboard-check"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_assessments }}</div>
+                <div class="stat-label">Assessments</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon"><i class="bi bi-bar-chart"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_attempts }}</div>
+                <div class="stat-label">Completed Attempts</div>
+            </div>
+        </div>
+    </div>
+    <!-- AI Risk Summary Card -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card" style="border-left:4px solid #7c3aed; background:linear-gradient(135deg,#7c3aed15,#fff);">
+            <div class="stat-icon" style="color:#7c3aed;"><i class="bi bi-cpu-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value" style="color:#7c3aed;">{{ risk_high }}</div>
+                <div class="stat-label">High-Risk Students</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Department Chart -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-pie-chart text-primary"></i> Students by Department
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="deptChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Risk Distribution Chart -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-shield-exclamation text-warning"></i> AI Risk Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="riskChart" height="220"></canvas>
+                <div class="d-flex justify-content-around mt-2 small">
+                    <span><span class="badge bg-success me-1">&nbsp;</span>Low: {{ risk_low }}</span>
+                    <span><span class="badge bg-warning text-dark me-1">&nbsp;</span>Medium: {{ risk_medium }}</span>
+                    <span><span class="badge bg-danger me-1">&nbsp;</span>High: {{ risk_high }}</span>
+                    <span><span class="badge bg-secondary me-1">&nbsp;</span>N/A: {{ risk_unknown }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Students -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history text-primary"></i> Recently Added
+                </h5>
+                <a href="{{ url_for('admin.students') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>ID</th>
+                                <th>Sem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in recent_students %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('admin.view_student', student_id=student.id) }}">
+                                        {{ student.full_name }}
+                                    </a>
+                                </td>
+                                <td><code class="small">{{ student.student_id }}</code></td>
+                                <td>{{ student.current_semester }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-center text-muted">No students yet</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- At-Risk Students Alert Panel -->
+{% if at_risk_students %}
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card shadow-sm border-danger border-opacity-50">
+            <div class="card-header bg-danger bg-opacity-10 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0 text-danger">
+                    <i class="bi bi-exclamation-triangle-fill"></i> High-Risk Students — Immediate Attention Required
+                </h5>
+                <a href="{{ url_for('admin.students') }}" class="btn btn-sm btn-outline-danger">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Student</th>
+                                <th>ID</th>
+                                <th>Department</th>
+                                <th>Semester</th>
+                                <th>Health Score</th>
+                                <th>Risk Updated</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in at_risk_students %}
+                            <tr class="table-danger table-opacity-25">
+                                <td>
+                                    <a href="{{ url_for('admin.view_student', student_id=student.id) }}" class="fw-semibold">
+                                        {{ student.full_name }}
+                                    </a>
+                                </td>
+                                <td><code>{{ student.student_id }}</code></td>
+                                <td>{{ student.department.name if student.department else '—' }}</td>
+                                <td>{{ student.current_semester }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height:8px; min-width:60px;">
+                                            <div class="progress-bar bg-danger"
+                                                 style="width:{{ student.academic_health_score or 0 }}%"></div>
+                                        </div>
+                                        <span class="small fw-semibold text-danger">
+                                            {{ "%.1f"|format(student.academic_health_score or 0) }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="small text-muted">
+                                    {{ student.risk_updated_at | datefmt if student.risk_updated_at else '—' }}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('ai.ai_report', student_id=student.id) }}"
+                                       class="btn btn-sm btn-danger">
+                                        <i class="bi bi-cpu"></i> AI Report
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Action Cards -->
+<div class="row g-3 mt-2">
+    <div class="col-12">
+        <h5 class="text-muted mb-3">Quick Actions</h5>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.add_student') }}" class="card quick-action-card text-decoration-none">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-person-plus fs-1 text-primary"></i>
+                <p class="mt-2 mb-0 fw-semibold">Add Student</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.add_faculty') }}" class="card quick-action-card text-decoration-none">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-person-badge fs-1 text-success"></i>
+                <p class="mt-2 mb-0 fw-semibold">Add Faculty</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.bulk_import') }}" class="card quick-action-card text-decoration-none">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-file-earmark-spreadsheet fs-1 text-info"></i>
+                <p class="mt-2 mb-0 fw-semibold">Bulk Import</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('admin.upload_students_csv') }}" class="card quick-action-card text-decoration-none">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-upload fs-1 text-warning"></i>
+                <p class="mt-2 mb-0 fw-semibold">CSV Upload</p>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Department Pie Chart
+const deptCtx = document.getElementById('deptChart').getContext('2d');
+new Chart(deptCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ dept_labels | tojson }},
+        datasets: [{
+            data: {{ dept_counts | tojson }},
+            backgroundColor: [
+                '#667eea', '#764ba2', '#f093fb', '#f5576c',
+                '#4facfe', '#43e97b', '#fa709a', '#fee140'
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+    }
+});
+
+// AI Risk Distribution Chart
+const riskCtx = document.getElementById('riskChart').getContext('2d');
+new Chart(riskCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Low Risk', 'Medium Risk', 'High Risk', 'Not Analysed'],
+        datasets: [{
+            data: [{{ risk_low }}, {{ risk_medium }}, {{ risk_high }}, {{ risk_unknown }}],
+            backgroundColor: ['#22c55e', '#f59e0b', '#ef4444', '#94a3b8'],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 11 } } },
+            tooltip: {
+                callbacks: {
+                    label: function(ctx) {
+                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                        const pct = total > 0 ? Math.round(ctx.raw / total * 100) : 0;
+                        return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

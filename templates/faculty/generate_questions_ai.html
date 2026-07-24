@@ -1,0 +1,264 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="bi bi-stars text-purple"></i> AI Question Generator</h4>
+        <p class="text-muted mb-0">Use IBM Granite to instantly generate quiz questions for your question bank.</p>
+    </div>
+    <a href="{{ url_for('faculty.questions') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Bank
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Generation Form -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-gradient-purple text-white" style="background: linear-gradient(135deg,#7c3aed,#5b21b6);">
+                <h6 class="mb-0"><i class="bi bi-cpu"></i> Generation Settings</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="genForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Subject -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Subject</label>
+                        <select class="form-select" name="subject_id" id="subjectSelect" required>
+                            {% for subj in subjects %}
+                            <option value="{{ subj.id }}"
+                                {{ 'selected' if gen_params.get('subject_id') == subj.id }}>
+                                {{ subj.code }} – {{ subj.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Unit -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Unit</label>
+                        <select class="form-select" name="unit_id" id="unitSelect" required>
+                            {% for unit in units %}
+                            <option value="{{ unit.id }}"
+                                {{ 'selected' if gen_params.get('unit_id') == unit.id }}>
+                                Unit {{ unit.unit_number }}: {{ unit.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Question Type -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Question Type</label>
+                        <select class="form-select" name="question_type">
+                            {% set qt = gen_params.get('question_type', 'mcq') %}
+                            <option value="mcq"        {{ 'selected' if qt=='mcq' }}>Multiple Choice (MCQ)</option>
+                            <option value="true_false" {{ 'selected' if qt=='true_false' }}>True / False</option>
+                            <option value="fill_blank" {{ 'selected' if qt=='fill_blank' }}>Fill in the Blank</option>
+                        </select>
+                    </div>
+
+                    <!-- Difficulty -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Difficulty</label>
+                        <select class="form-select" name="difficulty">
+                            {% set diff = gen_params.get('difficulty', 'medium') %}
+                            <option value="easy"   {{ 'selected' if diff=='easy' }}>Easy</option>
+                            <option value="medium" {{ 'selected' if diff=='medium' }}>Medium</option>
+                            <option value="hard"   {{ 'selected' if diff=='hard' }}>Hard</option>
+                        </select>
+                    </div>
+
+                    <!-- Count -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Number of Questions</label>
+                        <input type="number" class="form-control" name="count"
+                               min="1" max="10" value="{{ gen_params.get('count', 5) }}">
+                        <div class="form-text">Maximum 10 questions per request.</div>
+                    </div>
+
+                    <!-- Topic Hint -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Topic Hint <span class="text-muted">(optional)</span></label>
+                        <input type="text" class="form-control" name="topic_hint"
+                               placeholder="e.g. binary search trees, recursion"
+                               value="{{ gen_params.get('topic_hint', '') }}">
+                        <div class="form-text">Narrow down the focus area for better questions.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" id="generateBtn">
+                        <span id="btnSpinner" class="spinner-border spinner-border-sm d-none me-1"></span>
+                        <i class="bi bi-stars" id="btnIcon"></i> Generate with IBM Granite
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Info Card -->
+        <div class="card mt-3 border-0 bg-light">
+            <div class="card-body py-3">
+                <h6 class="text-muted mb-2"><i class="bi bi-info-circle"></i> How it works</h6>
+                <ol class="small text-muted mb-0 ps-3">
+                    <li>Select subject, unit, type and difficulty</li>
+                    <li>IBM Granite generates questions instantly</li>
+                    <li>Review generated questions below</li>
+                    <li>Check the ones you want to keep</li>
+                    <li>Click <strong>Save Selected</strong> to add to your bank</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generated Questions -->
+    <div class="col-lg-8">
+        {% if ai_questions %}
+        <form method="POST" id="saveForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="save_selected">
+            <input type="hidden" name="subject_id" value="{{ gen_params.get('subject_id', '') }}">
+            <input type="hidden" name="unit_id" value="{{ gen_params.get('unit_id', '') }}">
+            <input type="hidden" name="questions_json" value="{{ questions_json | e }}">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">
+                    <span class="badge bg-success me-2">{{ ai_questions|length }}</span>
+                    Questions Generated by IBM Granite
+                </h5>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" onclick="toggleAll(true)">
+                        Select All
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" onclick="toggleAll(false)">
+                        Deselect All
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-save"></i> Save Selected to Bank
+                    </button>
+                </div>
+            </div>
+
+            {% for q in ai_questions %}
+            <div class="card mb-3 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="form-check mt-1">
+                            <input class="form-check-input q-checkbox" type="checkbox"
+                                   name="selected_q" value="{{ loop.index0 }}"
+                                   id="q{{ loop.index0 }}" checked>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge bg-{{ 'success' if q.difficulty == 'easy' else 'warning text-dark' if q.difficulty == 'medium' else 'danger' }}">
+                                    {{ q.difficulty | capitalize }}
+                                </span>
+                                <span class="badge bg-secondary">{{ q.question_type | replace('_', ' ') | title }}</span>
+                                <span class="text-muted small">Question {{ loop.index }}</span>
+                            </div>
+
+                            <p class="fw-semibold mb-2">{{ q.question_text }}</p>
+
+                            {% if q.question_type == 'mcq' %}
+                            <div class="row g-1 small mb-2">
+                                {% for opt_label, opt_val in [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)] %}
+                                {% if opt_val %}
+                                <div class="col-md-6">
+                                    <span class="p-1 px-2 rounded d-block
+                                        {{ 'bg-success text-white fw-semibold' if q.correct_answer == opt_label | lower else 'bg-light' }}">
+                                        <strong>{{ opt_label }}.</strong> {{ opt_val }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% elif q.question_type == 'true_false' %}
+                            <div class="small mb-2">
+                                <span class="badge {{ 'bg-success' if q.correct_answer == 'true' else 'bg-light text-dark border' }} me-2">True</span>
+                                <span class="badge {{ 'bg-success' if q.correct_answer == 'false' else 'bg-light text-dark border' }}">False</span>
+                                <span class="text-muted ms-2">Correct: <strong>{{ q.correct_answer | capitalize }}</strong></span>
+                            </div>
+                            {% else %}
+                            <div class="small mb-2">
+                                <span class="text-success fw-semibold">Answer: {{ q.correct_answer }}</span>
+                            </div>
+                            {% endif %}
+
+                            {% if q.explanation %}
+                            <div class="alert alert-light py-2 px-3 mb-0 small">
+                                <i class="bi bi-lightbulb text-warning"></i>
+                                <strong>Explanation:</strong> {{ q.explanation }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="bi bi-save"></i> Save Selected Questions to Bank
+                </button>
+            </div>
+        </form>
+
+        {% elif request.method == 'POST' and not ai_questions %}
+        <div class="card border-warning shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+                <h5 class="mt-3">IBM Granite Unavailable</h5>
+                <p class="text-muted">The AI model could not generate questions right now.</p>
+                <ul class="text-start text-muted small mx-auto" style="max-width:400px;">
+                    <li>Check that <code>WATSONX_API_KEY</code> is set in <code>.env</code></li>
+                    <li>Check that <code>WATSONX_PROJECT_ID</code> is correct</li>
+                    <li>Run <code>flask diagnose-ai</code> in the terminal for details</li>
+                    <li>Ensure your IBM Cloud account is active (not frozen)</li>
+                </ul>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="card border-0 bg-light shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-stars fs-1 text-purple" style="color:#7c3aed;"></i>
+                <h5 class="mt-3 text-muted">Configure and Generate</h5>
+                <p class="text-muted">
+                    Fill in the settings on the left and click<br>
+                    <strong>"Generate with IBM Granite"</strong> to create AI-powered questions.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dynamically load units when subject changes
+document.getElementById('subjectSelect').addEventListener('change', function() {
+    const subjectId = this.value;
+    if (!subjectId) return;
+    fetch(`/faculty/api/units/${subjectId}`)
+        .then(r => r.json())
+        .then(units => {
+            const sel = document.getElementById('unitSelect');
+            sel.innerHTML = units.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+        })
+        .catch(() => {});
+});
+
+// Show spinner on generate
+document.getElementById('genForm').addEventListener('submit', function() {
+    document.getElementById('btnSpinner').classList.remove('d-none');
+    document.getElementById('btnIcon').classList.add('d-none');
+    document.getElementById('generateBtn').disabled = true;
+    document.getElementById('generateBtn').textContent = ' Generating...';
+    document.getElementById('generateBtn').prepend(document.getElementById('btnSpinner'));
+});
+
+function toggleAll(check) {
+    document.querySelectorAll('.q-checkbox').forEach(cb => cb.checked = check);
+}
+</script>
+{% endblock %}

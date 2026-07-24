@@ -1,0 +1,165 @@
+{% extends "student/student_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-person text-primary"></i> My Profile</h4>
+    <a href="{{ url_for('ai.ai_report', student_id=student.id) }}" class="btn btn-outline-primary" style="border-color:#7c3aed;color:#7c3aed;">
+        <i class="bi bi-cpu"></i> View AI Report
+    </a>
+</div>
+
+<div class="row g-3">
+    <!-- Profile Card -->
+    <div class="col-md-4">
+        <div class="card shadow-sm text-center">
+            <div class="card-body p-4">
+                <div class="avatar-circle avatar-lg mb-3">{{ student.full_name[0].upper() }}</div>
+                <h5 class="fw-bold">{{ student.full_name }}</h5>
+                <p class="text-muted mb-1">{{ student.student_id }}</p>
+                <p class="text-muted small mb-2">{{ student.department.name if student.department else 'No Department' }}</p>
+                {% if student.is_active %}
+                    <span class="badge bg-success">Active Student</span>
+                {% else %}
+                    <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- AI Academic Health Score Card -->
+        {% if student.academic_health_score is not none %}
+        <div class="card shadow-sm mt-3 border-0"
+             style="border-left:4px solid {{ '#22c55e' if student.risk_level == 'low' else '#f59e0b' if student.risk_level == 'medium' else '#ef4444' }} !important;">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="bi bi-cpu text-primary"></i> Academic Health Score
+                </h6>
+                <div class="text-center mb-2">
+                    <span class="display-5 fw-bold text-{{ 'success' if student.risk_level == 'low' else 'warning' if student.risk_level == 'medium' else 'danger' }}">
+                        {{ "%.1f"|format(student.academic_health_score) }}
+                    </span>
+                    <span class="text-muted">/100</span>
+                </div>
+                <div class="progress mb-2" style="height:10px;">
+                    <div class="progress-bar bg-{{ 'success' if student.risk_level == 'low' else 'warning' if student.risk_level == 'medium' else 'danger' }}"
+                         style="width:{{ student.academic_health_score }}%"></div>
+                </div>
+                <div class="text-center">
+                    <span class="badge bg-{{ 'success' if student.risk_level == 'low' else 'warning text-dark' if student.risk_level == 'medium' else 'danger' }} fs-6">
+                        {{ student.risk_level.upper() if student.risk_level else 'NOT ANALYSED' }} RISK
+                    </span>
+                </div>
+                {% if student.risk_updated_at %}
+                <p class="text-muted small text-center mt-2 mb-0">
+                    Updated: {{ student.risk_updated_at | datefmt }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Profile Details -->
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0"><i class="bi bi-person-lines-fill"></i> Profile Information</h6></div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted fw-semibold" style="width:180px">Full Name</td>
+                            <td>{{ student.full_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Student ID</td>
+                            <td><code>{{ student.student_id }}</code></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Email</td>
+                            <td>{{ student.user.email }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Phone</td>
+                            <td>{{ student.phone or '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Department</td>
+                            <td>{{ student.department.name if student.department else '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Current Semester</td>
+                            <td>Semester {{ student.current_semester }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Batch Year</td>
+                            <td>{{ student.batch_year or '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Date of Birth</td>
+                            <td>{{ student.date_of_birth | datefmt if student.date_of_birth else '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Gender</td>
+                            <td>{{ student.gender.title() if student.gender else '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Address</td>
+                            <td>{{ student.address or '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Account Status</td>
+                            <td>
+                                {% if student.user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Member Since</td>
+                            <td>{{ student.created_at | datefmt if student.created_at else '—' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Quick Stats Row -->
+        <div class="row g-3 mt-1">
+            <div class="col-md-4">
+                <div class="card border-0 bg-primary bg-opacity-10 text-center p-3">
+                    <div class="fs-4 fw-bold text-primary">{{ student.attendance_percentage }}%</div>
+                    <div class="small text-muted">Attendance</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-success bg-opacity-10 text-center p-3">
+                    <div class="fs-4 fw-bold text-success">{{ student.latest_gpa or '—' }}</div>
+                    <div class="small text-muted">Latest GPA</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-info bg-opacity-10 text-center p-3">
+                    <div class="fs-4 fw-bold text-info">{{ student.current_semester }}</div>
+                    <div class="small text-muted">Semester</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card shadow-sm mt-3">
+            <div class="card-body d-flex gap-2 flex-wrap">
+                <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-key"></i> Change Password
+                </a>
+                <a href="{{ url_for('ai.ai_report', student_id=student.id) }}" class="btn btn-outline-secondary" style="border-color:#7c3aed;color:#7c3aed;">
+                    <i class="bi bi-cpu"></i> View Full AI Report
+                </a>
+                <a href="{{ url_for('student.history') }}" class="btn btn-outline-info">
+                    <i class="bi bi-clock-history"></i> Assessment History
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

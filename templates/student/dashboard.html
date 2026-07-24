@@ -1,0 +1,377 @@
+{% extends "student/student_layout.html" %}
+
+{% block content %}
+<!-- Welcome Banner -->
+<div class="welcome-banner mb-4">
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h3 class="mb-1">Welcome back, {{ student.full_name }}!</h3>
+            <p class="mb-0 text-muted">{{ student.department.name if student.department else 'Student' }} | Semester {{ student.current_semester }} | {{ student.student_id }}</p>
+        </div>
+        <!-- AI Health Score Badge -->
+        <div class="text-center d-none d-lg-block">
+            {% if health %}
+            <a href="{{ url_for('ai.ai_report', student_id=student.id) }}" class="text-decoration-none">
+                <div class="ai-health-badge ai-health-{{ health.risk_level }}">
+                    <div class="ai-health-score">{{ health.score }}</div>
+                    <small>Health Score</small>
+                    <div class="ai-health-risk badge bg-{{ health.color }}">{{ health.risk_level | upper }} RISK</div>
+                </div>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-{{ 'success' if att_pct >= 75 else 'warning' if att_pct >= 60 else 'danger' }}">
+            <div class="stat-icon"><i class="bi bi-calendar-check-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ att_pct }}%</div>
+                <div class="stat-label">Attendance</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon"><i class="bi bi-journal-text"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ avg_assignment }}%</div>
+                <div class="stat-label">Avg. Assignment Score</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon"><i class="bi bi-mortarboard-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ latest_gpa }}</div>
+                <div class="stat-label">Latest GPA</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon"><i class="bi bi-clipboard-data-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ avg_score }}%</div>
+                <div class="stat-label">Avg. Assessment Score</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Assessment Progress Chart -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-graph-up text-primary"></i> Assessment Performance</h6>
+            </div>
+            <div class="card-body">
+                {% if chart_labels %}
+                <canvas id="performanceChart" height="150"></canvas>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-graph-up fs-1 mb-2"></i>
+                    <p>No assessment data yet. Take your first assessment!</p>
+                    <a href="{{ url_for('student.assessments') }}" class="btn btn-primary btn-sm">Take Assessment</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance by Subject -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-pie-chart text-success"></i> Attendance Summary</h6>
+            </div>
+            <div class="card-body">
+                {% if att_by_subject %}
+                    {% for name, total, present in att_by_subject %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="fw-semibold">{{ name }}</small>
+                            <small>{{ present }}/{{ total }} ({{ ((present / total * 100) | round(1)) if total else 0 }}%)</small>
+                        </div>
+                        <div class="progress" style="height:6px">
+                            {% set pct = ((present / total * 100) | round(1)) if total else 0 %}
+                            <div class="progress-bar bg-{{ 'success' if pct >= 75 else 'warning' if pct >= 60 else 'danger' }}" 
+                                 style="width:{{ pct }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <p class="text-muted text-center py-4">No attendance data yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upcoming Assessments -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between">
+                <h6 class="mb-0"><i class="bi bi-calendar-event text-warning"></i> Upcoming Assessments</h6>
+                <a href="{{ url_for('student.assessments') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                {% for a in upcoming_assessments %}
+                <div class="list-group-item px-3 py-2 border-bottom">
+                    <div class="d-flex justify-content-between">
+                        <strong>{{ a.title }}</strong>
+                        <small class="text-muted">{{ a.scheduled_date | datefmt }}</small>
+                    </div>
+                    <small class="text-muted">{{ a.subject.name }} | {{ a.duration_minutes }} min | {{ a.total_questions }} Questions</small>
+                </div>
+                {% else %}
+                <div class="p-3 text-center text-muted">No upcoming assessments.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Feedback -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-chat-square-text text-info"></i> Recent Faculty Feedback</h6>
+            </div>
+            <div class="card-body">
+                {% for fb in recent_feedback %}
+                <div class="card mb-2 border-start border-primary border-3">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between">
+                            <small><strong>{{ fb.faculty.full_name }}</strong></small>
+                            <span class="badge bg-primary">{{ fb.overall_rating }}/5</span>
+                        </div>
+                        <div class="row mt-1">
+                            <div class="col-6"><small class="text-muted">Participation: {{ fb.class_participation }}/5</small></div>
+                            <div class="col-6"><small class="text-muted">Understanding: {{ fb.subject_understanding }}/5</small></div>
+                        </div>
+                        {% if fb.comments %}
+                        <p class="mb-0 small text-muted mt-1">{{ fb.comments[:80] }}{{ '...' if fb.comments|length > 80 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No feedback yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Assessments -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between">
+                <h6 class="mb-0"><i class="bi bi-clipboard-check text-primary"></i> Recent Assessment Results</h6>
+                <a href="{{ url_for('student.history') }}" class="btn btn-sm btn-outline-primary">Full History</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
+                            <tr><th>Assessment</th><th>Score</th><th>%</th><th>Correct</th><th>Date</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            {% for attempt in completed_attempts %}
+                            <tr>
+                                <td>{{ attempt.assessment.title }}</td>
+                                <td>{{ attempt.score }}/{{ attempt.assessment.max_marks }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if attempt.percentage >= 75 else 'warning' if attempt.percentage >= 50 else 'danger' }}">
+                                        {{ attempt.percentage }}%
+                                    </span>
+                                </td>
+                                <td>{{ attempt.correct_answers }}/{{ attempt.total_questions }}</td>
+                                <td>{{ attempt.submitted_at | datefmt if attempt.submitted_at else '—' }}</td>
+                                <td>
+                                    <a href="{{ url_for('student.assessment_result', attempt_id=attempt.id) }}" 
+                                       class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="6" class="text-center text-muted">No assessments taken yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div><!-- /row -->
+
+<!-- ── AI Chatbot Widget ─────────────────────────────────────────────────── -->
+<div id="chatbotWidget" style="position:fixed;bottom:24px;right:24px;z-index:9999;">
+    <!-- Toggle Button -->
+    <button id="chatToggleBtn"
+            style="width:56px;height:56px;border-radius:50%;border:0;
+                   background:linear-gradient(135deg,#667eea,#764ba2);
+                   color:white;font-size:1.4rem;box-shadow:0 4px 18px rgba(102,126,234,.45);
+                   cursor:pointer;display:flex;align-items:center;justify-content:center;">
+        <i class="bi bi-robot"></i>
+    </button>
+
+    <!-- Chat Window -->
+    <div id="chatWindow"
+         style="display:none;position:absolute;bottom:68px;right:0;
+                width:340px;background:var(--card-bg);border-radius:1rem;
+                box-shadow:0 8px 32px rgba(0,0,0,.18);overflow:hidden;
+                border:1px solid var(--border);">
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:.9rem 1rem;
+                    color:white;display:flex;align-items:center;gap:.6rem;">
+            <i class="bi bi-cpu-fill"></i>
+            <div>
+                <div style="font-weight:700;font-size:.95rem;">AI Academic Advisor</div>
+                <small style="opacity:.8;">Powered by IBM Granite</small>
+            </div>
+            <button onclick="document.getElementById('chatWindow').style.display='none'"
+                    style="margin-left:auto;background:none;border:0;color:white;font-size:1.1rem;cursor:pointer;">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Messages -->
+        <div id="chatMessages"
+             style="height:300px;overflow-y:auto;padding:.75rem;display:flex;flex-direction:column;gap:.5rem;">
+            <div class="chat-msg ai-msg">
+                <small>👋 Hi {{ student.full_name.split()[0] }}! I'm your AI Academic Advisor. Ask me anything about your studies, exam tips, or time management!</small>
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div style="padding:.6rem;border-top:1px solid var(--border);display:flex;gap:.4rem;">
+            <input id="chatInput" type="text" class="form-control form-control-sm"
+                   placeholder="Ask a question..." maxlength="500"
+                   style="border-radius:.5rem;">
+            <button id="chatSendBtn" class="btn btn-primary btn-sm" style="border-radius:.5rem;white-space:nowrap;">
+                <i class="bi bi-send"></i>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Assessment Performance Chart ──────────────────────────────────────────
+{% if chart_labels %}
+const ctx = document.getElementById('performanceChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ chart_labels | tojson }},
+        datasets: [{
+            label: 'Score (%)',
+            data: {{ chart_scores | tojson }},
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102,126,234,0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 5,
+            pointHoverRadius: 7
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }
+        },
+        plugins: { legend: { display: false } }
+    }
+});
+{% endif %}
+
+// ── AI Chatbot Widget JS ──────────────────────────────────────────────────
+const chatToggle = document.getElementById('chatToggleBtn');
+const chatWindow = document.getElementById('chatWindow');
+const chatInput  = document.getElementById('chatInput');
+const chatMsgs   = document.getElementById('chatMessages');
+const sendBtn    = document.getElementById('chatSendBtn');
+
+chatToggle.addEventListener('click', () => {
+    chatWindow.style.display = chatWindow.style.display === 'none' ? 'block' : 'none';
+    if (chatWindow.style.display === 'block') chatInput.focus();
+});
+
+function appendMsg(text, isUser) {
+    const div = document.createElement('div');
+    div.style.cssText = `
+        max-width:90%; padding:.5rem .75rem; border-radius:.75rem; font-size:.88rem; line-height:1.5;
+        align-self:${isUser ? 'flex-end' : 'flex-start'};
+        background:${isUser ? 'linear-gradient(135deg,#667eea,#764ba2)' : 'var(--border)'};
+        color:${isUser ? 'white' : 'var(--text)'}; white-space:pre-wrap;
+    `;
+    div.textContent = text;
+    chatMsgs.appendChild(div);
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+}
+
+function appendTyping() {
+    const div = document.createElement('div');
+    div.id = 'typingIndicator';
+    div.style.cssText = 'align-self:flex-start;padding:.5rem .75rem;background:var(--border);border-radius:.75rem;font-size:.85rem;color:var(--text-muted);';
+    div.textContent = '...typing';
+    chatMsgs.appendChild(div);
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+}
+
+async function sendMessage() {
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+    chatInput.value = '';
+    appendMsg(msg, true);
+    appendTyping();
+    sendBtn.disabled = true;
+
+    try {
+        const resp = await fetch('{{ url_for("ai.chatbot") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ message: msg })
+        });
+        const data = await resp.json();
+        document.getElementById('typingIndicator')?.remove();
+        appendMsg(data.response || 'Sorry, I could not respond right now.', false);
+    } catch(e) {
+        document.getElementById('typingIndicator')?.remove();
+        appendMsg('Connection error. Please try again.', false);
+    } finally {
+        sendBtn.disabled = false;
+        chatInput.focus();
+    }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keypress', e => { if(e.key === 'Enter') sendMessage(); });
+</script>
+
+<style>
+/* AI Health Badge */
+.ai-health-badge {
+    border-radius: 1rem;
+    padding: 1rem 1.5rem;
+    text-align: center;
+    color: white;
+    min-width: 120px;
+    transition: transform .2s;
+}
+.ai-health-badge:hover { transform: scale(1.05); }
+.ai-health-low    { background: linear-gradient(135deg, #28a745, #20c997); }
+.ai-health-medium { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+.ai-health-high   { background: linear-gradient(135deg, #dc3545, #c82333); }
+.ai-health-score  { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+.ai-health-risk   { font-size: 0.7rem; margin-top: .3rem; }
+</style>
+{% endblock %}

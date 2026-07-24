@@ -1,0 +1,91 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-journal-text text-primary"></i> Assignment Marks</h4>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0">Add Assignment Marks</h6></div>
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.student_id.label(class="form-label fw-semibold") }}
+                        {{ form.student_id(class="form-select" ~ (" is-invalid" if form.student_id.errors else "")) }}
+                        {% if form.student_id.errors %}<div class="invalid-feedback">{{ form.student_id.errors[0] }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.subject_id.label(class="form-label fw-semibold") }}
+                        {{ form.subject_id(class="form-select") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label fw-semibold") }}
+                        {{ form.title(class="form-control", placeholder="Assignment title") }}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            {{ form.max_marks.label(class="form-label fw-semibold") }}
+                            {{ form.max_marks(class="form-control") }}
+                        </div>
+                        <div class="col-6 mb-3">
+                            {{ form.obtained_marks.label(class="form-label fw-semibold") }}
+                            {{ form.obtained_marks(class="form-control") }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.submission_date.label(class="form-label fw-semibold") }}
+                        {{ form.submission_date(class="form-control") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.remarks.label(class="form-label fw-semibold") }}
+                        {{ form.remarks(class="form-control", rows=2) }}
+                    </div>
+                    
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0">Recent Entries</h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
+                            <tr><th>Student</th><th>Subject</th><th>Title</th><th>Score</th><th>%</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for a in recent %}
+                            <tr>
+                                <td>{{ a.student.full_name }}</td>
+                                <td>{{ a.subject.name }}</td>
+                                <td>{{ a.title }}</td>
+                                <td>{{ a.obtained_marks }}/{{ a.max_marks }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if a.percentage >= 75 else 'warning' if a.percentage >= 50 else 'danger' }}">
+                                        {{ a.percentage }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center text-muted">No entries yet</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

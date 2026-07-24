@@ -1,0 +1,100 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <i class="bi bi-bar-chart text-primary"></i> Results – {{ assessment.title }}
+    </h4>
+    <a href="{{ url_for('faculty.assessments') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon"><i class="bi bi-people"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ attempts|length }}</div>
+                <div class="stat-label">Total Attempts</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon"><i class="bi bi-percent"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ avg_score }}%</div>
+                <div class="stat-label">Average Score</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon"><i class="bi bi-clock"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ assessment.duration_minutes }}m</div>
+                <div class="stat-label">Duration</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Rank</th>
+                        <th>Student</th>
+                        <th>Score</th>
+                        <th>Percentage</th>
+                        <th>Correct/Total</th>
+                        <th>Submitted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attempt in attempts %}
+                    <tr>
+                        <td>
+                            {% if loop.index == 1 %}
+                                <i class="bi bi-trophy-fill text-warning"></i>
+                            {% elif loop.index == 2 %}
+                                <i class="bi bi-trophy text-secondary"></i>
+                            {% elif loop.index == 3 %}
+                                <i class="bi bi-trophy text-danger" style="opacity:0.6"></i>
+                            {% else %}
+                                {{ loop.index }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('faculty.view_student', student_id=attempt.student.id) }}">
+                                {{ attempt.student.full_name }}
+                            </a>
+                        </td>
+                        <td>{{ attempt.score }}/{{ assessment.max_marks }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height:8px">
+                                    <div class="progress-bar bg-{{ 'success' if attempt.percentage >= 75 else 'warning' if attempt.percentage >= 50 else 'danger' }}" 
+                                         style="width:{{ attempt.percentage }}%"></div>
+                                </div>
+                                <span class="badge bg-{{ 'success' if attempt.percentage >= 75 else 'warning' if attempt.percentage >= 50 else 'danger' }}">
+                                    {{ attempt.percentage }}%
+                                </span>
+                            </div>
+                        </td>
+                        <td>{{ attempt.correct_answers }}/{{ attempt.total_questions }}</td>
+                        <td>{{ attempt.submitted_at | datefmt if attempt.submitted_at else '—' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">No attempts yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

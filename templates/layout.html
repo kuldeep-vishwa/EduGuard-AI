@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block body_content %}
+<!-- Sidebar -->
+<nav id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+        <h3><i class="bi bi-shield-check"></i> EduGuard AI</h3>
+    </div>
+    
+    <ul class="sidebar-nav">
+        {% block sidebar_nav %}{% endblock %}
+    </ul>
+    
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <i class="bi bi-person-circle"></i>
+            <span>{{ current_user.display_name }}</span>
+        </div>
+        <button class="theme-toggle" id="themeToggle" title="Toggle Dark Mode">
+            <i class="bi bi-moon-stars"></i>
+        </button>
+    </div>
+</nav>
+
+<!-- Main Content Wrapper -->
+<div class="main-wrapper">
+    <!-- Top Nav -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container-fluid">
+            <button class="btn btn-link sidebar-toggle" id="sidebarToggle">
+                <i class="bi bi-list"></i>
+            </button>
+            
+            <span class="navbar-brand mb-0 h1">{% block page_title %}{{ title }}{% endblock %}</span>
+            
+            <div class="d-flex align-items-center">
+                <div class="dropdown">
+                    <button class="btn btn-link dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle fs-4"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><span class="dropdown-item-text fw-semibold">{{ current_user.email }}</span></li>
+                        <li><hr class="dropdown-divider"></li>
+                        {% if current_user.is_student %}
+                            <li><a class="dropdown-item" href="{{ url_for('student.profile') }}"><i class="bi bi-person"></i> Profile</a></li>
+                        {% endif %}
+                        <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}"><i class="bi bi-key"></i> Change Password</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="container-fluid mb-3">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            <i class="bi bi-{{ 'info-circle' if category == 'info' else 'check-circle' if category == 'success' else 'exclamation-triangle' }}"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Page Content -->
+        <div class="container-fluid">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container-fluid">
+            <span class="text-muted">&copy; {{ current_year }} EduGuard AI. All rights reserved.</span>
+        </div>
+    </footer>
+</div>
+{% endblock %}

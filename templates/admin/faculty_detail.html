@@ -1,0 +1,125 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-person-workspace text-primary"></i> {{ title }}</h4>
+    <a href="{{ url_for('admin.faculty_list') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="row g-3">
+    <!-- Profile Card -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="avatar-circle mb-3">{{ faculty.full_name[0].upper() }}</div>
+                <h5 class="fw-bold">{{ faculty.full_name }}</h5>
+                <p class="text-muted mb-1">{{ faculty.designation or 'Faculty' }}</p>
+                <code>{{ faculty.faculty_id }}</code>
+                <hr>
+                <div class="text-start">
+                    <p><i class="bi bi-envelope text-muted"></i> {{ faculty.user.email }}</p>
+                    <p><i class="bi bi-person-badge text-muted"></i> Username: <code>{{ faculty.user.username }}</code></p>
+                    <p><i class="bi bi-phone text-muted"></i> {{ faculty.phone or '—' }}</p>
+                    <p><i class="bi bi-building text-muted"></i> {{ faculty.department.name if faculty.department else '—' }}</p>
+                    <p><i class="bi bi-mortarboard text-muted"></i> {{ faculty.qualification or '—' }}</p>
+                    <p><i class="bi bi-award text-muted"></i> {{ faculty.specialization or '—' }}</p>
+                </div>
+                <div class="d-grid gap-2 mt-2">
+                    <a href="{{ url_for('admin.edit_faculty', faculty_id=faculty.id) }}"
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil"></i> Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column: subjects + assignment form -->
+    <div class="col-lg-8">
+
+        <!-- Currently assigned subjects -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-journal-bookmark text-success"></i> Subjects Currently Assigned</h6>
+                <span class="badge bg-{{ 'success' if subjects else 'secondary' }}">
+                    {{ subjects|length }} subject{{ 's' if subjects|length != 1 }}
+                </span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead class="table-light">
+                        <tr><th>Subject</th><th>Code</th><th>Department</th><th>Credits</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for fs in subjects %}
+                        <tr>
+                            <td>{{ fs.subject.name }}</td>
+                            <td><span class="badge bg-secondary">{{ fs.subject.code }}</span></td>
+                            <td>{{ fs.subject.department.name }}</td>
+                            <td>{{ fs.subject.credits }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">
+                                <i class="bi bi-exclamation-circle text-warning"></i>
+                                No subjects assigned. Use the form below to assign subjects.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Subject assignment form -->
+        <div class="card shadow-sm border-primary">
+            <div class="card-header bg-primary bg-opacity-10">
+                <h6 class="mb-0 text-primary">
+                    <i class="bi bi-bookmark-plus"></i> Assign / Update Subjects
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if all_subjects %}
+                <form method="POST"
+                      action="{{ url_for('admin.assign_subjects', faculty_id=faculty.id) }}"
+                      novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <p class="text-muted small mb-3">
+                        Check the subjects to assign to this faculty member.
+                        Saving will replace all existing assignments.
+                    </p>
+                    <div class="row g-2 mb-3">
+                        {% for subj in all_subjects %}
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="subject_ids" value="{{ subj.id }}"
+                                       id="subj_{{ subj.id }}"
+                                       {{ 'checked' if subj.id in assigned_ids }}>
+                                <label class="form-check-label" for="subj_{{ subj.id }}">
+                                    <strong>{{ subj.name }}</strong>
+                                    <small class="text-muted ms-1">({{ subj.code }})</small>
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Subject Assignments
+                    </button>
+                </form>
+                {% else %}
+                <p class="text-muted mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    No subjects exist yet.
+                    <a href="{{ url_for('admin.add_subject') }}">Add a subject first.</a>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

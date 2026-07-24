@@ -1,0 +1,166 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <i class="bi bi-person-lines-fill text-primary"></i> {{ title }}
+    </h4>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('ai.ai_report', student_id=student.id) }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-cpu"></i> AI Report
+        </a>
+        <a href="{{ url_for('faculty.student_list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="avatar-circle mb-3">{{ student.full_name[0].upper() }}</div>
+                <h5 class="fw-bold">{{ student.full_name }}</h5>
+                <code>{{ student.student_id }}</code>
+                <hr>
+                <div class="text-start">
+                    <p><i class="bi bi-envelope text-muted"></i> {{ student.user.email }}</p>
+                    <p><i class="bi bi-building text-muted"></i> {{ student.department.name if student.department else '—' }}</p>
+                    <p><i class="bi bi-calendar2 text-muted"></i> Semester {{ student.current_semester }}</p>
+                </div>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Attendance</span>
+                        <strong>{{ student.attendance_percentage }}%</strong>
+                    </div>
+                    <div class="progress" style="height:8px">
+                        <div class="progress-bar bg-{{ 'success' if student.attendance_percentage >= 75 else 'warning' if student.attendance_percentage >= 60 else 'danger' }}" 
+                             style="width:{{ student.attendance_percentage }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Feedback Action -->
+        <div class="card shadow-sm mt-3">
+            <div class="card-body text-center">
+                <a href="{{ url_for('faculty.feedback') }}" class="btn btn-primary w-100">
+                    <i class="bi bi-chat-square-text"></i> Submit Feedback
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-3" id="studentTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#att-tab">
+                            <i class="bi bi-calendar-check"></i> Attendance
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#asgn-tab">
+                            <i class="bi bi-journal-text"></i> Assignments
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#fb-tab">
+                            <i class="bi bi-chat-square-text"></i> Feedback
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#asmt-tab">
+                            <i class="bi bi-clipboard-check"></i> Assessments
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="att-tab">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead><tr><th>Date</th><th>Subject</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    {% for a in attendance %}
+                                    <tr>
+                                        <td>{{ a.date | datefmt }}</td>
+                                        <td>{{ a.subject.name }}</td>
+                                        <td><span class="badge bg-{{ 'success' if a.status == 'present' else 'danger' if a.status == 'absent' else 'warning' }}">{{ a.status.title() }}</span></td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="3" class="text-center text-muted">No records</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="asgn-tab">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead><tr><th>Subject</th><th>Title</th><th>Marks</th><th>%</th></tr></thead>
+                                <tbody>
+                                    {% for a in assignments %}
+                                    <tr>
+                                        <td>{{ a.subject.name }}</td>
+                                        <td>{{ a.title }}</td>
+                                        <td>{{ a.obtained_marks }}/{{ a.max_marks }}</td>
+                                        <td><span class="badge bg-{{ 'success' if a.percentage >= 75 else 'warning' if a.percentage >= 50 else 'danger' }}">{{ a.percentage }}%</span></td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="4" class="text-center text-muted">No records</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="fb-tab">
+                        {% for fb in feedbacks %}
+                        <div class="card mb-2 border-start border-primary border-3">
+                            <div class="card-body py-2 px-3">
+                                <div class="d-flex justify-content-between">
+                                    <small>{{ fb.feedback_date | datefmt }}</small>
+                                    <span class="badge bg-primary">{{ fb.overall_rating }}/5</span>
+                                </div>
+                                <div class="row mt-1 g-1">
+                                    <div class="col-6"><small>Participation: <strong>{{ fb.class_participation }}</strong></small></div>
+                                    <div class="col-6"><small>Understanding: <strong>{{ fb.subject_understanding }}</strong></small></div>
+                                    <div class="col-6"><small>Assignment: <strong>{{ fb.assignment_quality }}</strong></small></div>
+                                    <div class="col-6"><small>Progress: <strong>{{ fb.learning_progress }}</strong></small></div>
+                                </div>
+                                {% if fb.comments %}<p class="mb-0 text-muted small mt-1">{{ fb.comments }}</p>{% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center">No feedback from you yet.</p>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="tab-pane fade" id="asmt-tab">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead><tr><th>Assessment</th><th>Score</th><th>%</th><th>Date</th></tr></thead>
+                                <tbody>
+                                    {% for a in attempts %}
+                                    <tr>
+                                        <td>{{ a.assessment.title }}</td>
+                                        <td>{{ a.score }}/{{ a.assessment.max_marks }}</td>
+                                        <td><span class="badge bg-{{ 'success' if a.percentage >= 75 else 'warning' if a.percentage >= 50 else 'danger' }}">{{ a.percentage }}%</span></td>
+                                        <td>{{ a.submitted_at | datefmt if a.submitted_at else '—' }}</td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="4" class="text-center text-muted">No attempts</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

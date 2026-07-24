@@ -1,0 +1,216 @@
+{% extends "student/student_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-trophy text-warning"></i> Assessment Result</h4>
+    <a href="{{ url_for('student.assessments') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<!-- Result Banner -->
+<div class="result-banner mb-4">
+    <div class="row g-0 align-items-center">
+        <div class="col-md-4 text-center p-4">
+            <div class="score-circle {{ 'score-excellent' if attempt.percentage >= 75 else 'score-pass' if attempt.percentage >= 50 else 'score-fail' }}">
+                <div class="score-inner">
+                    <div class="score-percent">{{ attempt.percentage }}%</div>
+                    <div class="score-label">Score</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8 p-4">
+            <h4>{{ attempt.assessment.title }}</h4>
+            <div class="row g-2 mt-2">
+                <div class="col-6">
+                    <div class="result-stat">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <span>{{ attempt.correct_answers }} Correct</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="result-stat">
+                        <i class="bi bi-x-circle-fill text-danger"></i>
+                        <span>{{ attempt.total_questions - attempt.correct_answers }} Incorrect</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="result-stat">
+                        <i class="bi bi-star-fill text-warning"></i>
+                        <span>{{ attempt.score }}/{{ attempt.assessment.max_marks }} Marks</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="result-stat">
+                        <i class="bi bi-clock text-info"></i>
+                        <span>{{ (attempt.time_taken_seconds // 60) if attempt.time_taken_seconds else 0 }} min taken</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <a href="{{ url_for('ai.ai_report', student_id=student.id) }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-cpu"></i> View Full AI Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── IBM Granite AI Analysis ─────────────────────────────────────────── -->
+{% if ai_result %}
+<div class="card shadow-sm mb-4 border-0" style="border-radius:1rem;overflow:hidden;">
+    <div class="card-header d-flex align-items-center gap-2"
+         style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:0;">
+        <i class="bi bi-cpu-fill fs-5"></i>
+        <strong>IBM Granite AI Analysis</strong>
+        <span class="badge bg-white text-primary ms-auto" style="font-size:0.75rem;">Powered by IBM watsonx.ai</span>
+    </div>
+    <div class="card-body p-0">
+        {% set sections = ai_result.sections %}
+        {% if sections %}
+            {% set section_config = [
+                ('OVERALL_ASSESSMENT_SUMMARY',        'Overall Summary',             'file-text text-primary'),
+                ('ACADEMIC_HEALTH_SCORE_ANALYSIS',     'Health Score Analysis',       'heart-pulse text-danger'),
+                ('CONCEPT_UNDERSTANDING_LEVEL',        'Concept Understanding',       'lightbulb text-warning'),
+                ('CONFIDENCE_LEVEL',                   'Confidence Level',            'emoji-smile text-success'),
+                ('WEAK_TOPICS',                        'Weak Topics',                 'exclamation-triangle text-danger'),
+                ('STRONG_TOPICS',                      'Strong Topics',               'check-circle text-success'),
+                ('LEARNING_PATTERN',                   'Learning Pattern',            'graph-up text-info'),
+                ('MISTAKES_ANALYSIS',                  'Mistakes Analysis',           'bug text-warning'),
+                ('PERSONALIZED_STUDY_RECOMMENDATIONS', 'Study Recommendations',       'book text-primary'),
+                ('SUBJECT-WISE_IMPROVEMENT_SUGGESTIONS','Subject Improvement',        'journal-text text-info'),
+                ('TIME_MANAGEMENT_ADVICE',             'Time Management',             'clock text-secondary'),
+                ('EXAM_PREPARATION_TIPS',              'Exam Prep Tips',              'clipboard-check text-success'),
+                ('MOTIVATION_MESSAGE',                 'Motivation',                  'stars text-warning')
+            ] %}
+            <div class="row g-0">
+            {% for key, label, icon in section_config %}
+            {% if key in sections %}
+            <div class="col-md-6 border-bottom border-end p-3">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-{{ icon }} mt-1 flex-shrink-0"></i>
+                    <div>
+                        <div class="fw-semibold text-uppercase" style="font-size:0.72rem;letter-spacing:.05em;color:var(--text-muted);">{{ label }}</div>
+                        <p class="mb-0 mt-1" style="font-size:0.9rem;line-height:1.6;white-space:pre-line;">{{ sections[key] }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+            </div>
+        {% else %}
+        <!-- Fallback: show full text if sections weren't parsed -->
+        <div class="p-3">
+            <pre style="white-space:pre-wrap;font-size:0.88rem;font-family:inherit;">{{ ai_result.analysis_text }}</pre>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info mb-4">
+    <i class="bi bi-cpu"></i>
+    AI analysis is being generated. 
+    <a href="{{ url_for('ai.analyze_assessment', attempt_id=attempt.id) }}" class="alert-link">Generate now</a>
+</div>
+{% endif %}
+
+<!-- Answer Review -->
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-list-check"></i> Answer Review</h6>
+    </div>
+    <div class="card-body p-0">
+        {% for answer in answers %}
+        <div class="answer-row {{ 'answer-correct' if answer.is_correct else 'answer-incorrect' }}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="question-badge">Q{{ loop.index }}</span>
+                <span class="badge bg-{{ 'success' if answer.is_correct else 'danger' }}">
+                    {{ 'Correct' if answer.is_correct else 'Incorrect' }}
+                </span>
+            </div>
+            <p class="mb-2"><strong>{{ answer.question.question_text }}</strong></p>
+            
+            <div class="answer-details">
+                <div class="your-answer">
+                    <small class="text-muted">Your answer:</small>
+                    <span class="badge bg-{{ 'success' if answer.is_correct else 'danger' }}">
+                        {{ answer.selected_answer or 'Not answered' }}
+                    </span>
+                </div>
+                {% if not answer.is_correct %}
+                <div class="correct-answer mt-1">
+                    <small class="text-muted">Correct answer:</small>
+                    <span class="badge bg-success">{{ answer.question.correct_answer }}</span>
+                </div>
+                {% endif %}
+                {% if answer.question.explanation %}
+                <div class="explanation mt-2">
+                    <small class="text-info"><i class="bi bi-lightbulb"></i> {{ answer.question.explanation }}</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="mt-3 text-center">
+    <a href="{{ url_for('student.history') }}" class="btn btn-outline-primary me-2">
+        <i class="bi bi-clock-history"></i> View History
+    </a>
+    <a href="{{ url_for('student.assessments') }}" class="btn btn-primary me-2">
+        <i class="bi bi-clipboard-check"></i> More Assessments
+    </a>
+    <a href="{{ url_for('ai.ai_report', student_id=student.id) }}" class="btn btn-outline-secondary">
+        <i class="bi bi-file-earmark-text"></i> Full AI Report
+    </a>
+</div>
+
+<style>
+.result-banner {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+.score-circle {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+.score-excellent { background: linear-gradient(135deg, #28a745, #20c997); }
+.score-pass { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+.score-fail { background: linear-gradient(135deg, #dc3545, #c82333); }
+.score-inner { text-align: center; color: white; }
+.score-percent { font-size: 2rem; font-weight: bold; }
+.score-label { font-size: 0.85rem; opacity: 0.9; }
+.result-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+}
+.answer-row {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #eee;
+}
+.answer-correct { border-left: 4px solid #28a745; }
+.answer-incorrect { border-left: 4px solid #dc3545; }
+.question-badge {
+    background: #6c757d;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+</style>
+{% endblock %}

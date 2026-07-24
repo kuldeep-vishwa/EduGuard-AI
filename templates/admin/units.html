@@ -1,0 +1,63 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <i class="bi bi-list-nested text-primary"></i> {{ title }}
+    </h4>
+    <div>
+        <a href="{{ url_for('admin.add_unit') }}?subject_id={{ subject.id }}" class="btn btn-primary me-2">
+            <i class="bi bi-plus-circle"></i> Add Unit
+        </a>
+        <a href="{{ url_for('admin.subjects') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Subjects
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <strong>{{ subject.code }}</strong> – {{ subject.name }}
+        <span class="badge bg-secondary ms-2">{{ subject.credits }} Credits</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Unit No.</th>
+                        <th>Unit Name</th>
+                        <th>Description</th>
+                        <th>Questions</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for unit in units %}
+                    <tr>
+                        <td><span class="badge bg-primary">Unit {{ unit.unit_number }}</span></td>
+                        <td>{{ unit.name }}</td>
+                        <td>{{ (unit.description[:60] + '...') if unit.description and unit.description|length > 60 else unit.description or '—' }}</td>
+                        <td>{{ unit.questions.count() }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.edit_unit', unit_id=unit.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('admin.delete_unit', unit_id=unit.id) }}" 
+                                  class="d-inline" onsubmit="return confirm('Delete this unit?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">No units yet for this subject.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

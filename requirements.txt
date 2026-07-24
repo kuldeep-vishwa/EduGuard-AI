@@ -1,0 +1,22 @@
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Flask-WTF==1.2.1
+Flask-Migrate==4.0.7
+PyMySQL==1.1.1
+python-dotenv==1.0.1
+Werkzeug==3.0.3
+WTForms==3.1.2
+email-validator==2.2.0
+cryptography==43.0.3
+
+# Phase 2 – AI Integration
+ibm-watsonx-ai>=1.0.0
+
+# Phase 2 – Bulk Import / Export
+pandas>=2.0.0
+openpyxl>=3.1.0
+xlrd>=2.0.1
+
+# Phase 2 – Email Alerts
+Flask-Mail>=0.10.0

@@ -1,0 +1,73 @@
+{% extends "student/student_layout.html" %}
+
+{% block content %}
+<h4 class="mb-4"><i class="bi bi-clock-history text-primary"></i> Assessment History</h4>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Assessment</th>
+                        <th>Subject</th>
+                        <th>Score</th>
+                        <th>Percentage</th>
+                        <th>Correct/Total</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attempt in attempts.items %}
+                    <tr>
+                        <td>{{ (attempts.page - 1) * attempts.per_page + loop.index }}</td>
+                        <td>{{ attempt.assessment.title }}</td>
+                        <td>{{ attempt.assessment.subject.name }}</td>
+                        <td>{{ attempt.score }}/{{ attempt.assessment.max_marks }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height:8px; min-width:60px">
+                                    <div class="progress-bar bg-{{ 'success' if attempt.percentage >= 75 else 'warning' if attempt.percentage >= 50 else 'danger' }}" 
+                                         style="width:{{ attempt.percentage }}%"></div>
+                                </div>
+                                <span class="badge bg-{{ 'success' if attempt.percentage >= 75 else 'warning' if attempt.percentage >= 50 else 'danger' }}">
+                                    {{ attempt.percentage }}%
+                                </span>
+                            </div>
+                        </td>
+                        <td>{{ attempt.correct_answers }}/{{ attempt.total_questions }}</td>
+                        <td>{{ attempt.submitted_at | datefmt if attempt.submitted_at else '—' }}</td>
+                        <td>
+                            <a href="{{ url_for('student.assessment_result', attempt_id=attempt.id) }}" 
+                               class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-eye"></i> Review
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">No assessments taken yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if attempts.pages > 1 %}
+<nav class="mt-3">
+    <ul class="pagination justify-content-center">
+        {% for page_num in attempts.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {{ 'active' if page_num == attempts.page }}">
+                    <a class="page-link" href="{{ url_for('student.history', page=page_num) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

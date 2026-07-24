@@ -1,0 +1,279 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ total_students }}</div>
+                <div class="stat-label">My Students</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ subjects|length }}</div>
+                <div class="stat-label">Subjects</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon"><i class="bi bi-question-circle-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ question_count }}</div>
+                <div class="stat-label">Questions</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon"><i class="bi bi-clipboard-check-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ upcoming|length }}</div>
+                <div class="stat-label">Upcoming Assessments</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Risk Summary Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #22c55e !important;">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="fs-2 fw-bold text-success">{{ risk_low }}</div>
+                <div>
+                    <div class="fw-semibold">Low Risk</div>
+                    <div class="small text-muted">Students on track</div>
+                </div>
+                <i class="bi bi-shield-check ms-auto fs-2 text-success opacity-25"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #f59e0b !important;">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="fs-2 fw-bold text-warning">{{ risk_medium }}</div>
+                <div>
+                    <div class="fw-semibold">Medium Risk</div>
+                    <div class="small text-muted">Needs monitoring</div>
+                </div>
+                <i class="bi bi-exclamation-triangle ms-auto fs-2 text-warning opacity-25"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #ef4444 !important;">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="fs-2 fw-bold text-danger">{{ risk_high }}</div>
+                <div>
+                    <div class="fw-semibold">High Risk</div>
+                    <div class="small text-muted">Immediate attention</div>
+                </div>
+                <i class="bi bi-shield-x ms-auto fs-2 text-danger opacity-25"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Attendance Trend Chart -->
+    {% if att_trend_labels %}
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-calendar-check text-primary"></i> Attendance % by Subject</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="attChart" height="180"></canvas>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Upcoming Assessments -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between">
+                <h6 class="mb-0"><i class="bi bi-calendar-event text-primary"></i> Upcoming Assessments</h6>
+                <a href="{{ url_for('faculty.add_assessment') }}" class="btn btn-sm btn-primary">+ New</a>
+            </div>
+            <div class="card-body p-0">
+                {% for a in upcoming %}
+                <div class="list-group-item list-group-item-action px-3 py-2 border-bottom">
+                    <div class="d-flex justify-content-between">
+                        <strong>{{ a.title }}</strong>
+                        <small class="text-muted">{{ a.scheduled_date | datefmt }}</small>
+                    </div>
+                    <small class="text-muted">{{ a.subject.name }} | {{ a.duration_minutes }} min | {{ a.total_questions }} Qs</small>
+                </div>
+                {% else %}
+                <div class="p-3 text-center text-muted">No upcoming assessments</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- My Subjects -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-journal-bookmark text-success"></i> My Subjects</h6>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('faculty.export_class_excel') }}" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-file-excel"></i> Export Excel
+                    </a>
+                    <a href="{{ url_for('faculty.generate_questions_ai') }}" class="btn btn-sm btn-outline-purple" style="border-color:#7c3aed;color:#7c3aed;">
+                        <i class="bi bi-stars"></i> AI Questions
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% for subj in subjects %}
+                <div class="list-group-item px-3 py-2 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ subj.name }}</strong>
+                            <small class="text-muted ms-2">{{ subj.code }}</small>
+                        </div>
+                        <a href="{{ url_for('faculty.add_question') }}?subject_id={{ subj.id }}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-plus"></i> Question
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-3 text-center text-muted">No subjects assigned. Contact admin.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Assessment Score Trend Chart -->
+    {% if assess_labels %}
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-graph-up text-info"></i> Recent Assessment Scores</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="assessChart" height="180"></canvas>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Assessment Results Table -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-bar-chart text-info"></i> Recent Assessment Results</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Student</th>
+                                <th>Assessment</th>
+                                <th>Score</th>
+                                <th>Percentage</th>
+                                <th>Date</th>
+                                <th>AI Report</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attempt in recent_attempts %}
+                            <tr>
+                                <td>{{ attempt.student.full_name }}</td>
+                                <td>{{ attempt.assessment.title }}</td>
+                                <td>{{ attempt.score }}/{{ attempt.assessment.max_marks }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if attempt.percentage >= 75 else 'warning' if attempt.percentage >= 50 else 'danger' }}">
+                                        {{ attempt.percentage }}%
+                                    </span>
+                                </td>
+                                <td>{{ attempt.submitted_at | datefmt if attempt.submitted_at else '—' }}</td>
+                                <td>
+                                    <a href="{{ url_for('ai.ai_report', student_id=attempt.student.id) }}"
+                                       class="btn btn-xs btn-outline-purple" style="font-size:11px;border-color:#7c3aed;color:#7c3aed;">
+                                        <i class="bi bi-cpu"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="6" class="text-center text-muted">No results yet</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+{% if att_trend_labels %}
+// Attendance by Subject bar chart
+new Chart(document.getElementById('attChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: {{ att_trend_labels | tojson }},
+        datasets: [{
+            label: 'Attendance %',
+            data: {{ att_trend_data | tojson }},
+            backgroundColor: {{ att_trend_data | tojson }}.map(v =>
+                v >= 75 ? '#22c55e88' : v >= 50 ? '#f59e0b88' : '#ef444488'
+            ),
+            borderColor: {{ att_trend_data | tojson }}.map(v =>
+                v >= 75 ? '#22c55e' : v >= 50 ? '#f59e0b' : '#ef4444'
+            ),
+            borderWidth: 2,
+            borderRadius: 4,
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }
+        },
+        plugins: { legend: { display: false } }
+    }
+});
+{% endif %}
+
+{% if assess_labels %}
+// Assessment score trend line chart
+new Chart(document.getElementById('assessChart').getContext('2d'), {
+    type: 'line',
+    data: {
+        labels: {{ assess_labels | tojson }},
+        datasets: [{
+            label: 'Score %',
+            data: {{ assess_data | tojson }},
+            borderColor: '#6366f1',
+            backgroundColor: '#6366f122',
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#6366f1',
+            pointRadius: 4,
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }
+        },
+        plugins: { legend: { display: false } }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

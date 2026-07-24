@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block sidebar_nav %}
+<li class="{{ 'active' if request.endpoint == 'student.dashboard' }}">
+    <a href="{{ url_for('student.dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+</li>
+<li class="sidebar-section">Assessments</li>
+<li class="{{ 'active' if request.endpoint == 'student.assessments' }}">
+    <a href="{{ url_for('student.assessments') }}"><i class="bi bi-clipboard-check"></i> Take Assessment</a>
+</li>
+<li class="{{ 'active' if request.endpoint == 'student.history' }}">
+    <a href="{{ url_for('student.history') }}"><i class="bi bi-clock-history"></i> Assessment History</a>
+</li>
+<li class="sidebar-section">Academic</li>
+<li class="{{ 'active' if request.endpoint == 'student.academic_records' }}">
+    <a href="{{ url_for('student.academic_records') }}"><i class="bi bi-mortarboard"></i> Academic Records</a>
+</li>
+<li class="sidebar-section" style="color:#a78bfa;">AI Features</li>
+<li class="{{ 'active' if request.endpoint == 'ai.ai_report' }}">
+    <a href="{{ url_for('ai.ai_report', student_id=current_user.student_profile.id if current_user.student_profile else 0) }}"
+       style="color:#c4b5fd;">
+        <i class="bi bi-cpu"></i> AI Academic Report
+    </a>
+</li>
+<li class="sidebar-section">Account</li>
+<li class="{{ 'active' if request.endpoint == 'student.profile' }}">
+    <a href="{{ url_for('student.profile') }}"><i class="bi bi-person"></i> My Profile</a>
+</li>
+<li>
+    <a href="{{ url_for('auth.change_password') }}"><i class="bi bi-key"></i> Change Password</a>
+</li>
+<li>
+    <a href="{{ url_for('auth.logout') }}" class="text-danger"><i class="bi bi-box-arrow-right"></i> Logout</a>
+</li>
+{% endblock %}

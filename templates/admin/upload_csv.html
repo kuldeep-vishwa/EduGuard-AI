@@ -1,0 +1,65 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-upload text-primary"></i> Upload Students via CSV</h4>
+    <a href="{{ url_for('admin.students') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0">Upload CSV File</h6></div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" novalidate>
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.csv_file.label(class="form-label fw-semibold") }}
+                        {{ form.csv_file(class="form-control" ~ (" is-invalid" if form.csv_file.errors else ""), accept=".csv") }}
+                        {% if form.csv_file.errors %}
+                            <div class="invalid-feedback">{{ form.csv_file.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    {{ form.submit(class="btn btn-primary") }}
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0">CSV Format Guide</h6></div>
+            <div class="card-body">
+                <p class="text-muted small">Required columns:</p>
+                <code class="d-block mb-2">full_name, student_id, email, username, department_code, semester, batch_year, password</code>
+                <p class="text-muted small mt-3">Example row:</p>
+                <code class="d-block">John Doe, STU001, john@example.com, jdoe, CS, 3, 2022, STU001</code>
+                <p class="text-muted small mt-2">* If password is blank, defaults to student_id</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if results %}
+<div class="card shadow-sm mt-4">
+    <div class="card-header">
+        <h6 class="mb-0">Import Results</h6>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-{{ 'success' if results.success > 0 else 'warning' }}">
+            <strong>{{ results.success }}</strong> students imported successfully.
+        </div>
+        {% if results.errors %}
+        <h6>Errors:</h6>
+        <ul class="list-group list-group-flush">
+            {% for error in results.errors %}
+            <li class="list-group-item text-danger small">{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

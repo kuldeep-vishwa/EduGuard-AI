@@ -1,0 +1,98 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-chat-square-text text-primary"></i> Faculty Feedback</h4>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0">Submit Feedback</h6></div>
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.student_id.label(class="form-label fw-semibold") }}
+                        {{ form.student_id(class="form-select") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.subject_id.label(class="form-label fw-semibold") }}
+                        {{ form.subject_id(class="form-select") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.class_participation.label(class="form-label fw-semibold") }}
+                        {{ form.class_participation(class="form-select") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.subject_understanding.label(class="form-label fw-semibold") }}
+                        {{ form.subject_understanding(class="form-select") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.assignment_quality.label(class="form-label fw-semibold") }}
+                        {{ form.assignment_quality(class="form-select") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.learning_progress.label(class="form-label fw-semibold") }}
+                        {{ form.learning_progress(class="form-select") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.feedback_date.label(class="form-label fw-semibold") }}
+                        {{ form.feedback_date(class="form-control") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.comments.label(class="form-label fw-semibold") }}
+                        {{ form.comments(class="form-control", rows=3, placeholder="Additional comments...") }}
+                    </div>
+                    
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0">Recent Feedback</h6></div>
+            <div class="card-body p-2">
+                {% for fb in recent_feedbacks %}
+                <div class="card mb-2 border-start border-primary border-3">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ fb.student.full_name }}</strong>
+                                <small class="text-muted ms-2">{{ fb.student.student_id }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary">{{ fb.overall_rating }}/5</span>
+                                <br>
+                                <small class="text-muted">{{ fb.feedback_date | datefmt }}</small>
+                            </div>
+                        </div>
+                        <div class="row mt-1 g-1">
+                            <div class="col-6"><small class="text-muted">Participation: <strong>{{ fb.class_participation }}</strong></small></div>
+                            <div class="col-6"><small class="text-muted">Understanding: <strong>{{ fb.subject_understanding }}</strong></small></div>
+                            <div class="col-6"><small class="text-muted">Assignment: <strong>{{ fb.assignment_quality }}</strong></small></div>
+                            <div class="col-6"><small class="text-muted">Progress: <strong>{{ fb.learning_progress }}</strong></small></div>
+                        </div>
+                        {% if fb.comments %}
+                            <p class="text-muted small mt-1 mb-0">{{ fb.comments }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No feedback submitted yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

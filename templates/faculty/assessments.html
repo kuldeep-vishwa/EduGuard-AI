@@ -1,0 +1,80 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-clipboard-check text-primary"></i> Assessments</h4>
+    <a href="{{ url_for('faculty.add_assessment') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Schedule Assessment
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Subject</th>
+                        <th>Date</th>
+                        <th>Duration</th>
+                        <th>Questions</th>
+                        <th>Attempts</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in assessments.items %}
+                    <tr>
+                        <td>{{ (assessments.page - 1) * assessments.per_page + loop.index }}</td>
+                        <td><strong>{{ a.title }}</strong></td>
+                        <td>{{ a.subject.name }}</td>
+                        <td>{{ a.scheduled_date | datefmt }}</td>
+                        <td>{{ a.duration_minutes }} min</td>
+                        <td>{{ a.total_questions }}</td>
+                        <td>
+                            <a href="{{ url_for('faculty.assessment_results', a_id=a.id) }}" class="badge bg-info text-decoration-none">
+                                {{ a.attempts.filter_by(is_completed=True).count() }} attempts
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if a.is_active else 'secondary' }}">
+                                {{ 'Active' if a.is_active else 'Inactive' }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('faculty.assessment_results', a_id=a.id) }}" class="btn btn-sm btn-outline-info" title="Results">
+                                <i class="bi bi-bar-chart"></i>
+                            </a>
+                            <a href="{{ url_for('faculty.edit_assessment', a_id=a.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="text-center text-muted py-4">No assessments scheduled.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if assessments.pages > 1 %}
+<nav class="mt-3">
+    <ul class="pagination justify-content-center">
+        {% for page_num in assessments.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {{ 'active' if page_num == assessments.page }}">
+                    <a class="page-link" href="{{ url_for('faculty.assessments', page=page_num) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

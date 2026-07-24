@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+
+{% block sidebar_nav %}
+<li class="{{ 'active' if request.endpoint == 'admin.dashboard' }}">
+    <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+</li>
+<li class="sidebar-section">Management</li>
+<li class="{{ 'active' if 'department' in request.endpoint }}">
+    <a href="{{ url_for('admin.departments') }}"><i class="bi bi-building"></i> Departments</a>
+</li>
+<li class="{{ 'active' if 'subject' in request.endpoint }}">
+    <a href="{{ url_for('admin.subjects') }}"><i class="bi bi-journal-bookmark"></i> Subjects</a>
+</li>
+<li class="{{ 'active' if 'student' in request.endpoint }}">
+    <a href="{{ url_for('admin.students') }}"><i class="bi bi-people"></i> Students</a>
+</li>
+<li class="{{ 'active' if 'faculty' in request.endpoint }}">
+    <a href="{{ url_for('admin.faculty_list') }}"><i class="bi bi-person-workspace"></i> Faculty</a>
+</li>
+<li class="sidebar-section">Tools</li>
+<li class="{{ 'active' if request.endpoint == 'admin.upload_students_csv' }}">
+    <a href="{{ url_for('admin.upload_students_csv') }}"><i class="bi bi-upload"></i> CSV Upload</a>
+</li>
+<li class="{{ 'active' if request.endpoint == 'admin.bulk_import' }}">
+    <a href="{{ url_for('admin.bulk_import') }}"><i class="bi bi-file-earmark-spreadsheet"></i> Bulk Import</a>
+</li>
+<li class="sidebar-section" style="color:#a78bfa;">AI Features</li>
+<li class="{{ 'active' if 'ai' in request.endpoint }}">
+    <a href="#" onclick="alert('Select a student from the Students list to view their AI Report.')" style="color:#c4b5fd;">
+        <i class="bi bi-cpu"></i> AI Reports
+    </a>
+</li>
+<li class="sidebar-section">Account</li>
+<li>
+    <a href="{{ url_for('auth.change_password') }}"><i class="bi bi-key"></i> Change Password</a>
+</li>
+<li>
+    <a href="{{ url_for('auth.logout') }}" class="text-danger"><i class="bi bi-box-arrow-right"></i> Logout</a>
+</li>
+{% endblock %}
