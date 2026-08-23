@@ -378,8 +378,8 @@ The EduGuard AI project has been fully developed as a production-ready AI-powere
 
 # 👨‍💻 Developed By
 
-**Kuldeep Vishwakarma**
-**Princi Patel**
+**Kuldeep Vishwakarma**/n
+**Princi Patel**/n
 **Anuj Gadwal**
 
 **B.Tech Artificial Intelligence**
