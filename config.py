@@ -12,6 +12,13 @@ from urllib.parse import quote_plus
 # Load .env file if present
 load_dotenv()
 
+import os
+
+class Config:
+    # Retrieves DATABASE_URL from Render env, fallback to TiDB explicitly if missing
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'mysql+pymysql://3K5n9Mrgz9brk4h.root:IwzY9rLypDy02Flx@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/sys?ssl_verify_cert=true')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
 
 class Config:
     """Base configuration shared by all environments."""
