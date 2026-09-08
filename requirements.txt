@@ -20,3 +20,5 @@ xlrd>=2.0.1
 
 # Phase 2 – Email Alerts
 Flask-Mail>=0.10.0
+
+gunicorn
