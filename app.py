@@ -13,6 +13,10 @@ from database import init_db, db
 from models import User
 from email_service import init_mail
 
+
+import pymysql
+pymysql.install_as_MySQLdb()
+
 # Module-level CSRFProtect instance so it can be imported by tests if needed
 csrf = CSRFProtect()
 
