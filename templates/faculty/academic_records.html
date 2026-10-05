@@ -1,0 +1,77 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-mortarboard text-primary"></i> Academic Record Submissions</h4>
+    <a href="{{ url_for('faculty.add_academic_record') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg"></i> Submit New Record
+    </a>
+</div>
+
+{% if submissions %}
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Student</th>
+                        <th>Semester</th>
+                        <th>Year</th>
+                        <th>GPA</th>
+                        <th>Backlogs</th>
+                        <th>Submitted</th>
+                        <th>Status</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in submissions %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <strong>{{ sub.student.full_name }}</strong>
+                            <br><small class="text-muted">{{ sub.student.student_id }}</small>
+                        </td>
+                        <td><span class="badge bg-primary">Sem {{ sub.semester }}</span></td>
+                        <td>{{ sub.academic_year or '—' }}</td>
+                        <td><strong>{{ sub.gpa }}</strong>{% if sub.sgpa %} / SGPA {{ sub.sgpa }}{% endif %}</td>
+                        <td>
+                            <span class="badge bg-{{ 'danger' if sub.backlogs and sub.backlogs > 0 else 'success' }}">
+                                {{ sub.backlogs or 0 }}
+                            </span>
+                        </td>
+                        <td><small>{{ sub.submitted_at.strftime('%d %b %Y') }}</small></td>
+                        <td>
+                            {% if sub.status == 'pending' %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Pending</span>
+                            {% elif sub.status == 'approved' %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Approved</span>
+                            {% else %}
+                            <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if sub.status == 'rejected' and sub.rejection_reason %}
+                            <small class="text-danger">{{ sub.rejection_reason }}</small>
+                            {% elif sub.status == 'approved' and sub.reviewed_at %}
+                            <small class="text-success">Approved {{ sub.reviewed_at.strftime('%d %b %Y') }}</small>
+                            {% else %}
+                            <small class="text-muted">Awaiting review</small>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-inbox fs-1 mb-2 d-block"></i>
+    <p>No submissions yet. Click <strong>Submit New Record</strong> to start.</p>
+</div>
+{% endif %}
+{% endblock %}

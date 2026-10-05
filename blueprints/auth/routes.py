@@ -45,7 +45,8 @@ def login():
                 return redirect(next_page)
             return redirect(_role_dashboard())
 
-        flash("Invalid username or password.", "danger")
+        flash("Invalid ID or password. Please check your credentials and try again.", "danger")
+        return render_template("auth/login.html", form=form, title="Login – EduGuard AI")
 
     return render_template("auth/login.html", form=form, title="Login – EduGuard AI")
 

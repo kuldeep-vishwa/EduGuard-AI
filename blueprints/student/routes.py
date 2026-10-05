@@ -14,7 +14,7 @@ from database import db
 from models import (Student, Subject, Unit, Assessment, AssessmentAttempt,
                     AssessmentAnswer, Question, Attendance, Assignment,
                     FacultyFeedback, AcademicRecord, RoleEnum,
-                    AttendanceStatusEnum)
+                    AttendanceStatusEnum, Notification)
 from forms import AcademicRecordForm
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
@@ -120,6 +120,16 @@ def dashboard():
     student.risk_level            = health["risk_level"]
     db.session.commit()
 
+    # ── Generate smart notifications (idempotent) ─────────────────────────────
+    from blueprints.notifications.routes import generate_student_notifications
+    generate_student_notifications(student)
+
+    # ── Fetch notifications for bell ──────────────────────────────────────────
+    notifications = (current_user.notifications
+                     .order_by(Notification.created_at.desc())
+                     .limit(20).all())
+    unread_count = current_user.notifications.filter_by(is_read=False).count()
+
     return render_template("student/dashboard.html",
                            title="Student Dashboard",
                            student=student,
@@ -137,7 +147,9 @@ def dashboard():
                            chart_labels=chart_labels,
                            chart_scores=chart_scores,
                            att_by_subject=att_by_subject,
-                           health=health)
+                           health=health,
+                           notifications=notifications,
+                           unread_count=unread_count)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -332,11 +344,16 @@ def history():
 @student_required
 def academic_records():
     student = get_current_student()
+    # Only approved records appear here (written by admin upon approval)
     records = student.academic_records.order_by(AcademicRecord.semester).all()
+    # Compute health score breakdown for the contribution table
+    from ai_service import get_student_health_score
+    health = get_student_health_score(student)
     return render_template("student/academic_records.html",
                            title="Academic Records",
                            student=student,
-                           records=records)
+                           records=records,
+                           health=health)
 
 
 # ═════════════════════════════════════════════════════════════════════════════

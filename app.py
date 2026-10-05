@@ -55,6 +55,7 @@ def create_app(config_class=None) -> Flask:
     from blueprints.faculty.routes import faculty_bp
     from blueprints.student.routes import student_bp
     from blueprints.ai.routes import ai_bp
+    from blueprints.notifications.routes import notifications_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
@@ -62,6 +63,7 @@ def create_app(config_class=None) -> Flask:
     app.register_blueprint(faculty_bp)
     app.register_blueprint(student_bp)
     app.register_blueprint(ai_bp)
+    app.register_blueprint(notifications_bp)
 
     # ── Jinja2 Global Utilities ───────────────────────────────────────────────
     from datetime import datetime

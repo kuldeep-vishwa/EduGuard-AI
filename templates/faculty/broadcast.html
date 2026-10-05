@@ -1,0 +1,71 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <i class="bi bi-megaphone-fill text-warning"></i> Broadcast Notice
+    </h4>
+    <a href="{{ url_for('faculty.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="alert alert-info d-flex align-items-center gap-2 mb-4">
+            <i class="bi bi-info-circle-fill fs-5"></i>
+            <div>This message will be sent to <strong>{{ student_count }} authorized student(s)</strong> linked to your teaching records.</div>
+        </div>
+
+        {% if student_count == 0 %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            No authorized students found. Mark attendance first to link students to your profile.
+        </div>
+        {% else %}
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-broadcast"></i> Compose Broadcast
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+                        <input type="text" name="subject" class="form-control"
+                               placeholder="e.g. Tomorrow's Unit 3 Assessment – 10 AM" required maxlength="200">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Notice <span class="text-danger">*</span></label>
+                        <textarea name="body" class="form-control" rows="6"
+                                  placeholder="Write your notice here..." required maxlength="2000"></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Priority</label>
+                        <select name="priority" class="form-select">
+                            {% for p in priorities %}
+                                <option value="{{ p }}" {{ 'selected' if p == 'normal' else '' }}>
+                                    {{ p.capitalize() }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning text-dark fw-semibold">
+                            <i class="bi bi-megaphone-fill"></i> Send to {{ student_count }} Student(s)
+                        </button>
+                        <a href="{{ url_for('faculty.dashboard') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

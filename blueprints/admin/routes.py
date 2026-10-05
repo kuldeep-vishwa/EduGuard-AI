@@ -19,9 +19,11 @@ from database import db
 from models import (User, Student, Faculty, Department, Subject, Unit,
                     Attendance, Assignment, FacultyFeedback, Question,
                     Assessment, AssessmentAttempt, AcademicRecord,
-                    FacultySubject, RoleEnum)
+                    FacultySubject, RoleEnum, RiskWeight,
+                    AcademicRecordSubmission, RecordStatusEnum, Notification)
 from forms import (DepartmentForm, SubjectForm, UnitForm, StudentForm,
-                   FacultyForm, StudentCSVUploadForm, AcademicRecordForm)
+                   FacultyForm, StudentCSVUploadForm, AcademicRecordForm,
+                   RiskWeightForm, RecordRejectionForm)
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -80,6 +82,16 @@ def dashboard():
                         .order_by(Student.risk_updated_at.desc())
                         .limit(8).all())
 
+    # ── Generate admin notifications (idempotent) ─────────────────────────────
+    from blueprints.notifications.routes import generate_admin_notifications
+    generate_admin_notifications()
+
+    # ── Fetch notifications for bell ──────────────────────────────────────────
+    notifications = (current_user.notifications
+                     .order_by(Notification.created_at.desc())
+                     .limit(20).all())
+    unread_count = current_user.notifications.filter_by(is_read=False).count()
+
     return render_template("admin/dashboard.html",
                            title="Admin Dashboard",
                            stats=stats,
@@ -90,7 +102,9 @@ def dashboard():
                            risk_medium=risk_medium,
                            risk_high=risk_high,
                            risk_unknown=risk_unknown,
-                           at_risk_students=at_risk_students)
+                           at_risk_students=at_risk_students,
+                           notifications=notifications,
+                           unread_count=unread_count)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -856,3 +870,123 @@ def download_import_template(import_type):
         mimetype="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# RISK WEIGHT CONFIGURATION
+# ═════════════════════════════════════════════════════════════════════════════
+
+@admin_bp.route("/risk-config", methods=["GET", "POST"])
+@login_required
+@admin_required
+def risk_config():
+    """Admin can view and update the dynamic risk weightages."""
+    weights = RiskWeight.get_weights()
+    form = RiskWeightForm(obj=weights)
+
+    if form.validate_on_submit():
+        weights.attendance       = form.attendance.data
+        weights.assessment_score = form.assessment_score.data
+        weights.faculty_feedback = form.faculty_feedback.data
+        weights.assignment_score = form.assignment_score.data
+        weights.previous_gpa     = form.previous_gpa.data
+        weights.updated_by       = current_user.id
+        db.session.commit()
+        flash("Risk weightages updated successfully.", "success")
+        return redirect(url_for("admin.risk_config"))
+
+    return render_template("admin/risk_config.html",
+                           title="Risk Weight Configuration",
+                           form=form,
+                           weights=weights)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ACADEMIC RECORD APPROVALS
+# ═════════════════════════════════════════════════════════════════════════════
+
+@admin_bp.route("/record-approvals")
+@login_required
+@admin_required
+def record_approvals():
+    """List all academic record submissions for admin review."""
+    status_filter = request.args.get("status", "pending")
+    query = AcademicRecordSubmission.query
+    if status_filter in RecordStatusEnum.ALL:
+        query = query.filter_by(status=status_filter)
+    submissions = query.order_by(AcademicRecordSubmission.submitted_at.desc()).all()
+    return render_template("admin/record_approvals.html",
+                           title="Academic Record Approvals",
+                           submissions=submissions,
+                           status_filter=status_filter,
+                           RecordStatusEnum=RecordStatusEnum)
+
+
+@admin_bp.route("/record-approvals/<int:sub_id>/approve", methods=["POST"])
+@login_required
+@admin_required
+def approve_record(sub_id):
+    """Approve a pending academic record submission and write it to AcademicRecord."""
+    sub = AcademicRecordSubmission.query.get_or_404(sub_id)
+    if sub.status != RecordStatusEnum.PENDING:
+        flash("This submission has already been reviewed.", "warning")
+        return redirect(url_for("admin.record_approvals"))
+
+    # Upsert into AcademicRecord (extend existing or create new)
+    existing = AcademicRecord.query.filter_by(
+        student_id=sub.student_id, semester=sub.semester
+    ).first()
+    if existing:
+        existing.academic_year  = sub.academic_year or existing.academic_year
+        existing.gpa            = sub.gpa
+        existing.sgpa           = sub.sgpa if sub.sgpa is not None else existing.sgpa
+        existing.cgpa           = sub.cgpa if sub.cgpa is not None else existing.cgpa
+        existing.total_credits  = sub.total_credits if sub.total_credits is not None else existing.total_credits
+        existing.earned_credits = sub.earned_credits if sub.earned_credits is not None else existing.earned_credits
+        existing.backlogs       = sub.backlogs if sub.backlogs is not None else existing.backlogs
+        existing.remarks        = sub.remarks or existing.remarks
+    else:
+        record = AcademicRecord(
+            student_id    = sub.student_id,
+            semester      = sub.semester,
+            academic_year = sub.academic_year,
+            gpa           = sub.gpa,
+            sgpa          = sub.sgpa,
+            cgpa          = sub.cgpa,
+            total_credits = sub.total_credits,
+            earned_credits= sub.earned_credits,
+            backlogs      = sub.backlogs or 0,
+            remarks       = sub.remarks,
+        )
+        db.session.add(record)
+
+    sub.status      = RecordStatusEnum.APPROVED
+    sub.reviewed_at = datetime.utcnow()
+    sub.reviewed_by = current_user.id
+    db.session.commit()
+    flash(f"Record approved for {sub.student.full_name} – Semester {sub.semester}.", "success")
+    return redirect(url_for("admin.record_approvals"))
+
+
+@admin_bp.route("/record-approvals/<int:sub_id>/reject", methods=["POST"])
+@login_required
+@admin_required
+def reject_record(sub_id):
+    """Reject a pending academic record submission."""
+    sub = AcademicRecordSubmission.query.get_or_404(sub_id)
+    if sub.status != RecordStatusEnum.PENDING:
+        flash("This submission has already been reviewed.", "warning")
+        return redirect(url_for("admin.record_approvals"))
+
+    reason = request.form.get("rejection_reason", "").strip()
+    if not reason:
+        flash("Please provide a rejection reason.", "warning")
+        return redirect(url_for("admin.record_approvals"))
+
+    sub.status           = RecordStatusEnum.REJECTED
+    sub.reviewed_at      = datetime.utcnow()
+    sub.reviewed_by      = current_user.id
+    sub.rejection_reason = reason
+    db.session.commit()
+    flash(f"Record rejected for {sub.student.full_name}.", "info")
+    return redirect(url_for("admin.record_approvals"))

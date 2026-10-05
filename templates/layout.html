@@ -33,7 +33,71 @@
             
             <span class="navbar-brand mb-0 h1">{% block page_title %}{{ title }}{% endblock %}</span>
             
-            <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center gap-2">
+
+                <!-- ── Notification Bell ───────────────────────────────── -->
+                <div class="dropdown" id="notifDropdown">
+                    <button class="btn btn-link position-relative" id="notifBell" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+                        <i class="bi bi-bell fs-5"></i>
+                        <span id="notifBadge"
+                              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                              style="font-size:.65rem; {{ 'display:none' if (unread_count is not defined or unread_count == 0) else '' }}">
+                            {{ unread_count if unread_count is defined else 0 }}
+                        </span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end shadow p-0" id="notifPanel"
+                         style="min-width:360px; max-width:420px;">
+                        <!-- Header -->
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light rounded-top">
+                            <span class="fw-semibold small">Notifications</span>
+                            <button class="btn btn-link btn-sm p-0 text-secondary small" id="markAllReadBtn">Mark all as read</button>
+                        </div>
+                        <!-- List -->
+                        <div id="notifList" style="max-height:360px; overflow-y:auto;">
+                            {% if notifications is defined and notifications %}
+                                {% for n in notifications %}
+                                <div class="notif-item px-3 py-2 border-bottom {{ '' if n.is_read else 'notif-unread' }}"
+                                     data-id="{{ n.id }}" data-read="{{ n.is_read | lower }}">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <span class="notif-icon mt-1">
+                                            {% if n.notif_type == 'risk' %}
+                                                <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                                            {% elif n.notif_type == 'attendance' %}
+                                                <i class="bi bi-calendar-x-fill text-warning"></i>
+                                            {% elif n.notif_type == 'academic' %}
+                                                <i class="bi bi-mortarboard-fill text-info"></i>
+                                            {% elif n.notif_type in ['message', 'broadcast'] %}
+                                                <i class="bi bi-envelope-fill text-primary"></i>
+                                            {% else %}
+                                                <i class="bi bi-info-circle-fill text-secondary"></i>
+                                            {% endif %}
+                                        </span>
+                                        <div class="flex-grow-1" style="min-width:0;">
+                                            <div class="small fw-semibold text-truncate">{{ n.title }}</div>
+                                            <div class="text-muted" style="font-size:.78rem; white-space:normal;">{{ n.message | truncate(100) }}</div>
+                                            <div class="text-muted" style="font-size:.72rem;">{{ n.created_at.strftime('%d %b, %H:%M') }}</div>
+                                        </div>
+                                        {% if not n.is_read %}
+                                        <button class="btn btn-link btn-sm p-0 mark-one-read text-secondary"
+                                                data-id="{{ n.id }}" title="Mark as read" style="flex-shrink:0;">
+                                            <i class="bi bi-check2"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted py-4 small">No notifications yet.</div>
+                            {% endif %}
+                        </div>
+                        <!-- Footer -->
+                        <div class="text-center py-2 border-top bg-light rounded-bottom">
+                            <span class="text-muted small">{{ unread_count if unread_count is defined else 0 }} unread</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- ── End Notification Bell ───────────────────────────── -->
+
                 <div class="dropdown">
                     <button class="btn btn-link dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
                         <i class="bi bi-person-circle fs-4"></i>
@@ -83,4 +147,69 @@
         </div>
     </footer>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.notif-unread { background: #f0f4ff; }
+.notif-item:hover { background: #f8f9ff; cursor: default; }
+.notif-icon { font-size: 1rem; }
+#notifPanel { border-radius: .5rem; }
+</style>
+<script>
+(function () {
+    // ── Mark single notification read ────────────────────────────────────────
+    document.addEventListener("click", function (e) {
+        const btn = e.target.closest(".mark-one-read");
+        if (!btn) return;
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        fetch(`/notifications/${id}/read`, {
+            method: "POST",
+            headers: { "X-CSRFToken": "{{ csrf_token() }}" }
+        }).then(() => {
+            const item = btn.closest(".notif-item");
+            if (item) {
+                item.classList.remove("notif-unread");
+                btn.remove();
+            }
+            _decrementBadge();
+        });
+    });
+
+    // ── Mark all read ─────────────────────────────────────────────────────────
+    const markAll = document.getElementById("markAllReadBtn");
+    if (markAll) {
+        markAll.addEventListener("click", function (e) {
+            e.stopPropagation();
+            fetch("/notifications/mark-all-read", {
+                method: "POST",
+                headers: { "X-CSRFToken": "{{ csrf_token() }}" }
+            }).then(() => {
+                document.querySelectorAll(".notif-item").forEach(el => {
+                    el.classList.remove("notif-unread");
+                    const btn = el.querySelector(".mark-one-read");
+                    if (btn) btn.remove();
+                });
+                _setBadge(0);
+            });
+        });
+    }
+
+    function _decrementBadge() {
+        const badge = document.getElementById("notifBadge");
+        if (!badge) return;
+        let count = parseInt(badge.textContent) || 0;
+        count = Math.max(0, count - 1);
+        _setBadge(count);
+    }
+
+    function _setBadge(count) {
+        const badge = document.getElementById("notifBadge");
+        if (!badge) return;
+        badge.textContent = count;
+        badge.style.display = count === 0 ? "none" : "";
+    }
+})();
+</script>
 {% endblock %}

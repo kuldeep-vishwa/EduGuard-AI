@@ -6,6 +6,9 @@
         <i class="bi bi-person-lines-fill text-primary"></i> {{ title }}
     </h4>
     <div class="d-flex gap-2">
+        <a href="{{ url_for('faculty.send_message', student_id=student.id) }}" class="btn btn-success btn-sm">
+            <i class="bi bi-envelope"></i> Send Message
+        </a>
         <a href="{{ url_for('ai.ai_report', student_id=student.id) }}" class="btn btn-primary btn-sm">
             <i class="bi bi-cpu"></i> AI Report
         </a>

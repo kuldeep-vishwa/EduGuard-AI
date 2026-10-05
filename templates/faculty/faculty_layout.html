@@ -27,11 +27,20 @@
     <a href="{{ url_for('faculty.assessments') }}"><i class="bi bi-clipboard-check"></i> Assessments</a>
 </li>
 <li class="sidebar-section">Students</li>
-<li class="{{ 'active' if 'student' in request.endpoint and 'report' not in request.endpoint }}">
+<li class="{{ 'active' if 'student' in request.endpoint and 'report' not in request.endpoint and 'message' not in request.endpoint }}">
     <a href="{{ url_for('faculty.student_list') }}"><i class="bi bi-people"></i> Students</a>
+</li>
+<li class="{{ 'active' if request.endpoint == 'faculty.broadcast_notice' }}">
+    <a href="{{ url_for('faculty.broadcast_notice') }}"><i class="bi bi-megaphone"></i> Broadcast Notice</a>
+</li>
+<li class="{{ 'active' if request.endpoint == 'faculty.sent_messages' }}">
+    <a href="{{ url_for('faculty.sent_messages') }}"><i class="bi bi-envelope"></i> Sent Messages</a>
 </li>
 <li>
     <a href="{{ url_for('faculty.export_class_excel') }}"><i class="bi bi-file-excel"></i> Export to Excel</a>
+</li>
+<li class="{{ 'active' if 'academic_record' in request.endpoint }}">
+    <a href="{{ url_for('faculty.faculty_academic_records') }}"><i class="bi bi-mortarboard"></i> Academic Records</a>
 </li>
 <li class="sidebar-section" style="color:#a78bfa;">AI Features</li>
 <li>

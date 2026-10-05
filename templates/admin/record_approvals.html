@@ -1,0 +1,146 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block content %}
+<h4 class="mb-4"><i class="bi bi-folder-check text-primary"></i> Academic Record Approvals</h4>
+
+<!-- Status filter tabs -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if status_filter == 'pending' }}"
+           href="{{ url_for('admin.record_approvals', status='pending') }}">
+            Pending
+            <span class="badge bg-warning text-dark ms-1">
+                {{ submissions|selectattr('status','equalto','pending')|list|length if status_filter == 'pending' else '' }}
+            </span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if status_filter == 'approved' }}"
+           href="{{ url_for('admin.record_approvals', status='approved') }}">Approved</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if status_filter == 'rejected' }}"
+           href="{{ url_for('admin.record_approvals', status='rejected') }}">Rejected</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if status_filter == 'all' }}"
+           href="{{ url_for('admin.record_approvals', status='all') }}">All</a>
+    </li>
+</ul>
+
+{% if submissions %}
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Student</th>
+                        <th>Faculty</th>
+                        <th>Semester</th>
+                        <th>Year</th>
+                        <th>GPA / SGPA</th>
+                        <th>Backlogs</th>
+                        <th>Submitted</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in submissions %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <strong>{{ sub.student.full_name }}</strong>
+                            <br><small class="text-muted">{{ sub.student.student_id }}</small>
+                        </td>
+                        <td>{{ sub.faculty.full_name }}</td>
+                        <td><span class="badge bg-primary">Sem {{ sub.semester }}</span></td>
+                        <td>{{ sub.academic_year or '—' }}</td>
+                        <td>
+                            GPA: <strong>{{ sub.gpa }}</strong>
+                            {% if sub.sgpa %}<br><small>SGPA: {{ sub.sgpa }}</small>{% endif %}
+                            {% if sub.cgpa %}<br><small>CGPA: {{ sub.cgpa }}</small>{% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 'danger' if sub.backlogs and sub.backlogs > 0 else 'success' }}">
+                                {{ sub.backlogs or 0 }}
+                            </span>
+                        </td>
+                        <td><small>{{ sub.submitted_at.strftime('%d %b %Y') }}</small></td>
+                        <td>
+                            {% if sub.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                            {% elif sub.status == 'approved' %}
+                            <span class="badge bg-success">Approved</span>
+                            {% else %}
+                            <span class="badge bg-danger">Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if sub.status == 'pending' %}
+                            <!-- Approve button -->
+                            <form method="POST"
+                                  action="{{ url_for('admin.approve_record', sub_id=sub.id) }}"
+                                  class="d-inline"
+                                  onsubmit="return confirm('Approve this record?')">
+                                {{ csrf_token_input() if csrf_token_input is defined }}
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="bi bi-check-lg"></i> Approve
+                                </button>
+                            </form>
+                            <!-- Reject button triggers modal -->
+                            <button type="button" class="btn btn-danger btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#rejectModal{{ sub.id }}">
+                                <i class="bi bi-x-lg"></i> Reject
+                            </button>
+
+                            <!-- Reject Modal -->
+                            <div class="modal fade" id="rejectModal{{ sub.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Reject Record – {{ sub.student.full_name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST"
+                                              action="{{ url_for('admin.reject_record', sub_id=sub.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div class="modal-body">
+                                                <label class="form-label fw-semibold">Reason for Rejection</label>
+                                                <textarea name="rejection_reason" class="form-control" rows="3"
+                                                          required placeholder="Explain why this record is rejected…"></textarea>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-danger">Confirm Reject</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% elif sub.status == 'rejected' and sub.rejection_reason %}
+                            <small class="text-danger"><i class="bi bi-info-circle"></i> {{ sub.rejection_reason[:60] }}…</small>
+                            {% elif sub.status == 'approved' %}
+                            <small class="text-success"><i class="bi bi-check-circle"></i> Approved
+                                {% if sub.reviewed_at %}on {{ sub.reviewed_at.strftime('%d %b %Y') }}{% endif %}
+                            </small>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-inbox fs-1 mb-2 d-block"></i>
+    No {{ status_filter }} submissions found.
+</div>
+{% endif %}
+{% endblock %}

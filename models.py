@@ -544,6 +544,185 @@ class AcademicRecord(db.Model):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# RISK WEIGHT CONFIGURATION  (admin-controlled)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class RiskWeight(db.Model):
+    """
+    Stores admin-configurable weightages for the Academic Health Score.
+    Only ONE active row exists; use RiskWeight.get_weights() to retrieve it.
+    """
+    __tablename__ = "risk_weights"
+
+    id                = db.Column(db.Integer, primary_key=True)
+    attendance        = db.Column(db.Float, nullable=False, default=30.0)   # %
+    assessment_score  = db.Column(db.Float, nullable=False, default=35.0)   # %
+    faculty_feedback  = db.Column(db.Float, nullable=False, default=20.0)   # %
+    assignment_score  = db.Column(db.Float, nullable=False, default=10.0)   # %
+    previous_gpa      = db.Column(db.Float, nullable=False, default=5.0)    # %
+    updated_at        = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by        = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+
+    @classmethod
+    def get_weights(cls):
+        """Return current weights row, creating defaults if absent."""
+        row = cls.query.first()
+        if not row:
+            row = cls()
+            db.session.add(row)
+            db.session.commit()
+        return row
+
+    def as_fractions(self) -> dict:
+        """Return weights as fractions (0–1) for calculation."""
+        return {
+            "attendance":        self.attendance        / 100.0,
+            "assessment_score":  self.assessment_score  / 100.0,
+            "faculty_feedback":  self.faculty_feedback  / 100.0,
+            "assignment_score":  self.assignment_score  / 100.0,
+            "previous_gpa":      self.previous_gpa      / 100.0,
+        }
+
+    def __repr__(self) -> str:
+        return (f"<RiskWeight att={self.attendance} assess={self.assessment_score} "
+                f"fb={self.faculty_feedback} asgn={self.assignment_score} gpa={self.previous_gpa}>")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ACADEMIC RECORD SUBMISSION  (faculty submits → admin approves)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class RecordStatusEnum:
+    PENDING  = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    ALL = [PENDING, APPROVED, REJECTED]
+
+
+class AcademicRecordSubmission(db.Model):
+    """
+    Faculty submits academic record data for admin review.
+    Upon approval the data is written into AcademicRecord.
+    """
+    __tablename__ = "academic_record_submissions"
+
+    id              = db.Column(db.Integer, primary_key=True)
+    student_id      = db.Column(db.Integer, db.ForeignKey("students.id"), nullable=False)
+    faculty_id      = db.Column(db.Integer, db.ForeignKey("faculty.id"), nullable=False)
+    subject_id      = db.Column(db.Integer, db.ForeignKey("subjects.id"), nullable=True)
+
+    # Record data (mirrors AcademicRecord fields)
+    semester        = db.Column(db.Integer, nullable=False)
+    academic_year   = db.Column(db.String(20), nullable=True)
+    gpa             = db.Column(db.Float, nullable=False, default=0.0)
+    sgpa            = db.Column(db.Float, nullable=True)
+    cgpa            = db.Column(db.Float, nullable=True)
+    total_credits   = db.Column(db.Integer, nullable=True)
+    earned_credits  = db.Column(db.Integer, nullable=True)
+    backlogs        = db.Column(db.Integer, default=0)
+    remarks         = db.Column(db.Text, nullable=True)
+
+    # Workflow fields
+    status          = db.Column(db.String(20), nullable=False, default=RecordStatusEnum.PENDING)
+    submitted_at    = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    reviewed_at     = db.Column(db.DateTime, nullable=True)
+    reviewed_by     = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    rejection_reason = db.Column(db.Text, nullable=True)
+
+    # Relationships
+    student         = db.relationship("Student", backref=db.backref("record_submissions", lazy="dynamic"))
+    faculty         = db.relationship("Faculty", backref=db.backref("record_submissions", lazy="dynamic"))
+    subject         = db.relationship("Subject", backref=db.backref("record_submissions", lazy="dynamic"))
+    reviewer        = db.relationship("User", foreign_keys=[reviewed_by],
+                                      backref=db.backref("reviewed_submissions", lazy="dynamic"))
+
+    def __repr__(self) -> str:
+        return f"<AcademicRecordSubmission id={self.id} status={self.status}>"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NOTIFICATION  (in-app bell notifications for all roles)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class NotificationPriorityEnum:
+    LOW    = "low"
+    NORMAL = "normal"
+    HIGH   = "high"
+    ALL    = [LOW, NORMAL, HIGH]
+
+
+class NotificationTypeEnum:
+    RISK       = "risk"        # risk score change
+    ATTENDANCE = "attendance"  # low attendance
+    ACADEMIC   = "academic"    # GPA / performance
+    MESSAGE    = "message"     # faculty → student message
+    BROADCAST  = "broadcast"   # faculty broadcast notice
+    SYSTEM     = "system"      # admin/system alert
+    ALL = [RISK, ATTENDANCE, ACADEMIC, MESSAGE, BROADCAST, SYSTEM]
+
+
+class Notification(db.Model):
+    """
+    In-app notification for any user (student / faculty / admin).
+    Generated by application logic; never duplicated per source_key.
+    """
+    __tablename__ = "notifications"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    user_id     = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    title       = db.Column(db.String(200), nullable=False)
+    message     = db.Column(db.Text, nullable=False)
+    notif_type  = db.Column(db.String(30), nullable=False, default=NotificationTypeEnum.SYSTEM)
+    priority    = db.Column(db.String(10), nullable=False, default=NotificationPriorityEnum.NORMAL)
+    is_read     = db.Column(db.Boolean, default=False, nullable=False)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    read_at     = db.Column(db.DateTime, nullable=True)
+
+    # source_key: unique idempotency key to prevent duplicate notifications
+    # e.g. "risk:student_id:12" or "msg:message_id:5"
+    source_key  = db.Column(db.String(100), nullable=True, index=True)
+
+    # Relationship
+    user = db.relationship("User", backref=db.backref("notifications", lazy="dynamic",
+                                                       cascade="all, delete-orphan"))
+
+    def mark_read(self):
+        self.is_read = True
+        self.read_at = datetime.utcnow()
+
+    def __repr__(self) -> str:
+        return f"<Notification user={self.user_id} type={self.notif_type} read={self.is_read}>"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FACULTY MESSAGE  (faculty → student direct message)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class FacultyMessage(db.Model):
+    """
+    Direct message sent by a faculty member to a student.
+    Creates a Notification automatically on save via the route logic.
+    """
+    __tablename__ = "faculty_messages"
+
+    id            = db.Column(db.Integer, primary_key=True)
+    faculty_id    = db.Column(db.Integer, db.ForeignKey("faculty.id"), nullable=False)
+    student_id    = db.Column(db.Integer, db.ForeignKey("students.id"), nullable=False)
+    subject       = db.Column(db.String(200), nullable=False)
+    body          = db.Column(db.Text, nullable=False)
+    priority      = db.Column(db.String(10), nullable=False, default=NotificationPriorityEnum.NORMAL)
+    is_broadcast  = db.Column(db.Boolean, default=False, nullable=False)  # True = broadcast notice
+    sent_at       = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    faculty = db.relationship("Faculty", backref=db.backref("sent_messages", lazy="dynamic"))
+    student = db.relationship("Student", backref=db.backref("received_messages", lazy="dynamic"))
+
+    def __repr__(self) -> str:
+        return f"<FacultyMessage from={self.faculty_id} to={self.student_id}>"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # AI ANALYSIS RESULT  (cached IBM Granite analysis output)
 # ─────────────────────────────────────────────────────────────────────────────
 

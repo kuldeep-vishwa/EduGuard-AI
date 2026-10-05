@@ -1,0 +1,117 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block content %}
+<h4 class="mb-4"><i class="bi bi-sliders text-primary"></i> Risk Weight Configuration</h4>
+<p class="text-muted mb-4">
+    Configure the weightage for each factor used in the Academic Health Score calculation.
+    All values must be positive and must sum to exactly <strong>100%</strong>.
+</p>
+
+<div class="row g-4">
+    <!-- Current Weights Table -->
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0"><i class="bi bi-table me-1"></i>Current Weightages</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>Risk Factor</th><th class="text-end">Weightage</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><i class="bi bi-calendar-check text-info me-1"></i>Attendance</td>
+                            <td class="text-end"><strong>{{ weights.attendance }}%</strong></td></tr>
+                        <tr><td><i class="bi bi-clipboard-check text-primary me-1"></i>Assessment</td>
+                            <td class="text-end"><strong>{{ weights.assessment_score }}%</strong></td></tr>
+                        <tr><td><i class="bi bi-chat-square-text text-warning me-1"></i>Faculty Rating</td>
+                            <td class="text-end"><strong>{{ weights.faculty_feedback }}%</strong></td></tr>
+                        <tr><td><i class="bi bi-journal-text text-success me-1"></i>Assignment</td>
+                            <td class="text-end"><strong>{{ weights.assignment_score }}%</strong></td></tr>
+                        <tr><td><i class="bi bi-mortarboard text-secondary me-1"></i>Previous GPA</td>
+                            <td class="text-end"><strong>{{ weights.previous_gpa }}%</strong></td></tr>
+                        <tr class="table-dark">
+                            <td><strong>Total</strong></td>
+                            <td class="text-end"><strong>
+                                {{ (weights.attendance + weights.assessment_score + weights.faculty_feedback + weights.assignment_score + weights.previous_gpa)|round(1) }}%
+                            </strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% if weights.updated_at %}
+            <div class="card-footer text-muted small">
+                Last updated: {{ weights.updated_at.strftime('%d %b %Y, %H:%M') if weights.updated_at else '—' }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0"><i class="bi bi-pencil-square me-1"></i>Edit Weightages</h6></div>
+            <div class="card-body">
+                <form method="POST" id="weightForm">
+                    {{ form.hidden_tag() }}
+                    <div class="alert alert-info small py-2">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Weights must sum to <strong>100%</strong>. No negative values allowed.
+                        <span id="totalDisplay" class="fw-bold ms-2"></span>
+                    </div>
+
+                    {% for field in [form.attendance, form.assessment_score, form.faculty_feedback, form.assignment_score, form.previous_gpa] %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ field.label.text }}</label>
+                        <div class="input-group">
+                            {{ field(class="form-control weight-input" + (" is-invalid" if field.errors else ""), step="0.1", min="0", max="100") }}
+                            <span class="input-group-text">%</span>
+                        </div>
+                        {% for err in field.errors %}
+                        <div class="invalid-feedback d-block">{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <span class="text-muted small">Total: <strong id="liveTotal">—</strong></span>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works -->
+<div class="card shadow-sm mt-4">
+    <div class="card-header"><h6 class="mb-0"><i class="bi bi-question-circle me-1"></i>How Dynamic Risk Calculation Works</h6></div>
+    <div class="card-body">
+        <p class="mb-2">Each factor is first normalised to a 0–100 score, then multiplied by its weight fraction:</p>
+        <div class="row g-2 text-center">
+            <div class="col"><div class="p-2 bg-light rounded"><i class="bi bi-calendar-check text-info"></i><br><small>Attendance %</small><br><span class="badge bg-info">× {{ weights.attendance }}%</span></div></div>
+            <div class="col"><div class="p-2 bg-light rounded"><i class="bi bi-clipboard-check text-primary"></i><br><small>Assessment avg</small><br><span class="badge bg-primary">× {{ weights.assessment_score }}%</span></div></div>
+            <div class="col"><div class="p-2 bg-light rounded"><i class="bi bi-chat-square-text text-warning"></i><br><small>Faculty rating /5</small><br><span class="badge bg-warning text-dark">× {{ weights.faculty_feedback }}%</span></div></div>
+            <div class="col"><div class="p-2 bg-light rounded"><i class="bi bi-journal-text text-success"></i><br><small>Assignment avg</small><br><span class="badge bg-success">× {{ weights.assignment_score }}%</span></div></div>
+            <div class="col"><div class="p-2 bg-light rounded"><i class="bi bi-mortarboard text-secondary"></i><br><small>GPA /10</small><br><span class="badge bg-secondary">× {{ weights.previous_gpa }}%</span></div></div>
+        </div>
+        <p class="mt-3 mb-0 text-muted small"><strong>Final Health Score</strong> = Sum of all contributions. Score ≥ 70 → Low Risk, ≥ 45 → Medium Risk, &lt; 45 → High Risk.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const inputs = document.querySelectorAll('.weight-input');
+const liveTotal = document.getElementById('liveTotal');
+
+function updateTotal() {
+    let sum = 0;
+    inputs.forEach(inp => { sum += parseFloat(inp.value) || 0; });
+    sum = Math.round(sum * 10) / 10;
+    liveTotal.textContent = sum + '%';
+    liveTotal.className = (sum === 100) ? 'text-success fw-bold' : 'text-danger fw-bold';
+}
+
+inputs.forEach(inp => inp.addEventListener('input', updateTotal));
+updateTotal();
+</script>
+{% endblock %}

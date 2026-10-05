@@ -3,6 +3,12 @@
 {% block content %}
 <h4 class="mb-4"><i class="bi bi-mortarboard text-primary"></i> Academic Records</h4>
 
+<!-- Notice: only admin-approved records shown -->
+<div class="alert alert-info alert-sm small py-2 mb-4">
+    <i class="bi bi-shield-check me-1"></i>
+    These records have been verified and approved by the Admin. Contact your faculty if any record is missing.
+</div>
+
 {% if records %}
 <!-- GPA Chart -->
 <div class="card shadow-sm mb-4">
@@ -12,7 +18,7 @@
     </div>
 </div>
 
-<div class="card shadow-sm">
+<div class="card shadow-sm mb-4">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
@@ -51,9 +57,74 @@
 {% else %}
 <div class="text-center py-5 text-muted">
     <i class="bi bi-graph-up fs-1 mb-2"></i>
-    <p>No academic records available. Contact admin to add your GPA records.</p>
+    <p>No approved academic records available. Ask your faculty to submit records for admin approval.</p>
 </div>
 {% endif %}
+
+<!-- Academic Health Score Breakdown -->
+{% if health %}
+<div class="card shadow-sm mt-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-activity me-1"></i>Academic Health Score Breakdown</h6>
+        <span class="badge bg-{{ health.color }} fs-6">{{ health.score }}/100 – {{ health.risk_level|title }} Risk</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Factor</th>
+                    <th class="text-end">Your Score</th>
+                    <th class="text-end">Weight</th>
+                    <th class="text-end">Contribution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><i class="bi bi-calendar-check text-info me-1"></i>Attendance</td>
+                    <td class="text-end">{{ health.breakdown.attendance.value }}%</td>
+                    <td class="text-end">{{ health.breakdown.attendance.weight_pct }}%</td>
+                    <td class="text-end"><strong>{{ health.breakdown.attendance.contribution }}</strong></td>
+                </tr>
+                <tr>
+                    <td><i class="bi bi-clipboard-check text-primary me-1"></i>Assessment</td>
+                    <td class="text-end">{{ health.breakdown.assessment_score.value }}%</td>
+                    <td class="text-end">{{ health.breakdown.assessment_score.weight_pct }}%</td>
+                    <td class="text-end"><strong>{{ health.breakdown.assessment_score.contribution }}</strong></td>
+                </tr>
+                <tr>
+                    <td><i class="bi bi-chat-square-text text-warning me-1"></i>Faculty Rating</td>
+                    <td class="text-end">{{ health.breakdown.faculty_feedback.value }}%</td>
+                    <td class="text-end">{{ health.breakdown.faculty_feedback.weight_pct }}%</td>
+                    <td class="text-end"><strong>{{ health.breakdown.faculty_feedback.contribution }}</strong></td>
+                </tr>
+                <tr>
+                    <td><i class="bi bi-journal-text text-success me-1"></i>Assignment</td>
+                    <td class="text-end">{{ health.breakdown.assignment_score.value }}%</td>
+                    <td class="text-end">{{ health.breakdown.assignment_score.weight_pct }}%</td>
+                    <td class="text-end"><strong>{{ health.breakdown.assignment_score.contribution }}</strong></td>
+                </tr>
+                <tr>
+                    <td><i class="bi bi-mortarboard text-secondary me-1"></i>Previous GPA</td>
+                    <td class="text-end">{{ health.breakdown.previous_gpa.value }}%</td>
+                    <td class="text-end">{{ health.breakdown.previous_gpa.weight_pct }}%</td>
+                    <td class="text-end"><strong>{{ health.breakdown.previous_gpa.contribution }}</strong></td>
+                </tr>
+            </tbody>
+            <tfoot class="table-dark">
+                <tr>
+                    <td colspan="3"><strong>Final Health Score</strong></td>
+                    <td class="text-end"><strong>{{ health.score }} / 100</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <div class="card-footer small text-muted">
+        Risk: <strong class="text-{{ health.color }}">{{ health.risk_level|title }}</strong>
+        &nbsp;·&nbsp; Weights are set by the Admin and may change over time.
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block extra_js %}

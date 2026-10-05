@@ -1,0 +1,108 @@
+{% extends "faculty/faculty_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-mortarboard text-primary"></i> Submit Academic Record</h4>
+    <a href="{{ url_for('faculty.faculty_academic_records') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Submissions
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="alert alert-info small py-2 mb-3">
+            <i class="bi bi-info-circle me-1"></i>
+            Submitted records are sent to the <strong>Admin for approval</strong> before they appear in the student's academic record.
+        </div>
+
+        <form method="POST">
+            {{ form.hidden_tag() }}
+
+            <div class="row g-3">
+                <!-- Student -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">{{ form.student_id.label.text }} <span class="text-danger">*</span></label>
+                    {{ form.student_id(class="form-select" + (" is-invalid" if form.student_id.errors else "")) }}
+                    {% for err in form.student_id.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                </div>
+
+                <!-- Subject -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">{{ form.subject_id.label.text }}</label>
+                    {{ form.subject_id(class="form-select" + (" is-invalid" if form.subject_id.errors else "")) }}
+                    {% for err in form.subject_id.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                </div>
+
+                <!-- Semester -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">{{ form.semester.label.text }} <span class="text-danger">*</span></label>
+                    {{ form.semester(class="form-control" + (" is-invalid" if form.semester.errors else ""), placeholder="e.g. 3") }}
+                    {% for err in form.semester.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                </div>
+
+                <!-- Academic Year -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">{{ form.academic_year.label.text }}</label>
+                    {{ form.academic_year(class="form-control" + (" is-invalid" if form.academic_year.errors else ""), placeholder="e.g. 2023-24") }}
+                    {% for err in form.academic_year.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                </div>
+
+                <!-- Backlogs -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">{{ form.backlogs.label.text }}</label>
+                    {{ form.backlogs(class="form-control" + (" is-invalid" if form.backlogs.errors else ""), placeholder="0") }}
+                    {% for err in form.backlogs.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                </div>
+
+                <!-- GPA -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">{{ form.gpa.label.text }} <span class="text-danger">*</span></label>
+                    {{ form.gpa(class="form-control" + (" is-invalid" if form.gpa.errors else ""), step="0.01", placeholder="0.00 – 10.00") }}
+                    {% for err in form.gpa.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                </div>
+
+                <!-- SGPA -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">{{ form.sgpa.label.text }}</label>
+                    {{ form.sgpa(class="form-control" + (" is-invalid" if form.sgpa.errors else ""), step="0.01", placeholder="Optional") }}
+                    {% for err in form.sgpa.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                </div>
+
+                <!-- CGPA -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">{{ form.cgpa.label.text }}</label>
+                    {{ form.cgpa(class="form-control" + (" is-invalid" if form.cgpa.errors else ""), step="0.01", placeholder="Optional") }}
+                    {% for err in form.cgpa.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                </div>
+
+                <!-- Total Credits -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">{{ form.total_credits.label.text }}</label>
+                    {{ form.total_credits(class="form-control" + (" is-invalid" if form.total_credits.errors else ""), placeholder="Optional") }}
+                    {% for err in form.total_credits.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                </div>
+
+                <!-- Earned Credits -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">{{ form.earned_credits.label.text }}</label>
+                    {{ form.earned_credits(class="form-control" + (" is-invalid" if form.earned_credits.errors else ""), placeholder="Optional") }}
+                    {% for err in form.earned_credits.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                </div>
+
+                <!-- Remarks -->
+                <div class="col-12">
+                    <label class="form-label fw-semibold">{{ form.remarks.label.text }}</label>
+                    {{ form.remarks(class="form-control" + (" is-invalid" if form.remarks.errors else ""), rows="3", placeholder="Optional notes…") }}
+                    {% for err in form.remarks.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                </div>
+
+                <!-- Submit -->
+                <div class="col-12">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('faculty.faculty_academic_records') }}" class="btn btn-secondary ms-2">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

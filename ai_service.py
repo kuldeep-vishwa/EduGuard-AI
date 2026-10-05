@@ -401,16 +401,16 @@ def get_agent_instructions() -> str:
 # 3.  Academic Health Score (Rule-Based, ML-Ready)
 # ─────────────────────────────────────────────────────────────────────────────
 #
-# Weights are defined as constants here — change them once, affects all logic.
-# To plug in an ML model, replace `calculate_health_score` with a call to
-# joblib.load('model.pkl').predict([features]) and return the same dict shape.
+# Weights are loaded dynamically from the RiskWeight table (admin-controlled).
+# Fallback defaults match the original static values when no DB row exists.
 
-HEALTH_SCORE_WEIGHTS = {
-    "attendance":         0.30,   # 30 %
-    "assessment_score":   0.35,   # 35 %
-    "faculty_feedback":   0.20,   # 20 %
-    "assignment_score":   0.10,   # 10 %
-    "previous_gpa":       0.05,   # 5  %
+# Static fallback weights (used only if DB is unreachable during startup)
+_DEFAULT_WEIGHTS = {
+    "attendance":        0.30,
+    "assessment_score":  0.35,
+    "faculty_feedback":  0.20,
+    "assignment_score":  0.10,
+    "previous_gpa":      0.05,
 }
 
 RISK_THRESHOLDS = {
@@ -420,12 +420,22 @@ RISK_THRESHOLDS = {
 }
 
 
+def _get_dynamic_weights() -> dict:
+    """Load weight fractions from the DB (admin-configurable)."""
+    try:
+        from models import RiskWeight
+        return RiskWeight.get_weights().as_fractions()
+    except Exception:
+        return _DEFAULT_WEIGHTS
+
+
 def calculate_health_score(
     attendance_pct: float,
     assessment_avg: float,
     faculty_feedback_avg: float,   # 1–5 scale → normalised to 0–100
     assignment_avg: float,
     previous_gpa: float,           # 0–10 scale → normalised to 0–100
+    weights: dict = None,          # optional override (used in tests / admin preview)
 ) -> dict:
     """
     Compute the Academic Health Score and risk classification.
@@ -436,6 +446,7 @@ def calculate_health_score(
         faculty_feedback_avg: average faculty rating (0–5), auto-normalised
         assignment_avg      : average assignment score percentage (0–100)
         previous_gpa        : latest GPA (0–10), auto-normalised
+        weights             : dict of fractions (0–1); defaults to DB values
 
     Returns a dict with keys:
         score         : float  0–100
@@ -443,6 +454,7 @@ def calculate_health_score(
         risk_pct      : float  0–100  (inverse of health)
         color         : "success" | "warning" | "danger"
         breakdown     : dict of individual weighted contributions
+        weights_used  : dict showing % weights applied
     """
     # Normalise inputs that aren't already on 0–100 scale
     feedback_norm = min((faculty_feedback_avg / 5.0) * 100, 100)
@@ -455,7 +467,9 @@ def calculate_health_score(
     asgn  = max(0.0, min(100.0, assignment_avg))
     gpa   = max(0.0, min(100.0, gpa_norm))
 
-    w = HEALTH_SCORE_WEIGHTS
+    # Use provided weights or load dynamically from DB
+    w = weights if weights is not None else _get_dynamic_weights()
+
     score = (
         att  * w["attendance"] +
         ass  * w["assessment_score"] +
@@ -481,12 +495,13 @@ def calculate_health_score(
         "risk_pct":   round(100 - score, 2),
         "color":      color,
         "breakdown": {
-            "attendance":       {"value": att,  "weight": w["attendance"],       "contribution": round(att  * w["attendance"],       2)},
-            "assessment_score": {"value": ass,  "weight": w["assessment_score"], "contribution": round(ass  * w["assessment_score"], 2)},
-            "faculty_feedback": {"value": fb,   "weight": w["faculty_feedback"], "contribution": round(fb   * w["faculty_feedback"], 2)},
-            "assignment_score": {"value": asgn, "weight": w["assignment_score"], "contribution": round(asgn * w["assignment_score"], 2)},
-            "previous_gpa":     {"value": gpa,  "weight": w["previous_gpa"],     "contribution": round(gpa  * w["previous_gpa"],     2)},
+            "attendance":       {"value": att,  "weight": w["attendance"],       "weight_pct": round(w["attendance"]*100,1),       "contribution": round(att  * w["attendance"],       2)},
+            "assessment_score": {"value": ass,  "weight": w["assessment_score"], "weight_pct": round(w["assessment_score"]*100,1), "contribution": round(ass  * w["assessment_score"], 2)},
+            "faculty_feedback": {"value": fb,   "weight": w["faculty_feedback"], "weight_pct": round(w["faculty_feedback"]*100,1), "contribution": round(fb   * w["faculty_feedback"], 2)},
+            "assignment_score": {"value": asgn, "weight": w["assignment_score"], "weight_pct": round(w["assignment_score"]*100,1), "contribution": round(asgn * w["assignment_score"], 2)},
+            "previous_gpa":     {"value": gpa,  "weight": w["previous_gpa"],     "weight_pct": round(w["previous_gpa"]*100,1),     "contribution": round(gpa  * w["previous_gpa"],     2)},
         },
+        "weights_used": {k: round(v * 100, 1) for k, v in w.items()},
     }
 
 

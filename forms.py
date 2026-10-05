@@ -273,3 +273,67 @@ class AcademicRecordForm(FlaskForm):
                             validators=[Optional(), NumberRange(min=0)], default=0)
     remarks = TextAreaField("Remarks", validators=[Optional()])
     submit = SubmitField("Save Record")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADMIN – RISK WEIGHT CONFIGURATION
+# ─────────────────────────────────────────────────────────────────────────────
+
+class RiskWeightForm(FlaskForm):
+    attendance       = FloatField("Attendance (%)",
+                                  validators=[DataRequired(), NumberRange(min=0, max=100)])
+    assessment_score = FloatField("Assessment (%)",
+                                  validators=[DataRequired(), NumberRange(min=0, max=100)])
+    faculty_feedback = FloatField("Faculty Rating (%)",
+                                  validators=[DataRequired(), NumberRange(min=0, max=100)])
+    assignment_score = FloatField("Assignment (%)",
+                                  validators=[DataRequired(), NumberRange(min=0, max=100)])
+    previous_gpa     = FloatField("Previous GPA (%)",
+                                  validators=[DataRequired(), NumberRange(min=0, max=100)])
+    submit = SubmitField("Save Weights")
+
+    def validate_previous_gpa(self, field):
+        """Ensure all weights sum to exactly 100."""
+        total = (
+            (self.attendance.data or 0) +
+            (self.assessment_score.data or 0) +
+            (self.faculty_feedback.data or 0) +
+            (self.assignment_score.data or 0) +
+            (field.data or 0)
+        )
+        if round(total, 2) != 100.0:
+            raise ValidationError(
+                f"All weights must sum to 100%. Current total: {total:.2f}%"
+            )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FACULTY – ACADEMIC RECORD SUBMISSION
+# ─────────────────────────────────────────────────────────────────────────────
+
+class AcademicRecordSubmissionForm(FlaskForm):
+    student_id     = SelectField("Student", coerce=int, validators=[DataRequired()])
+    subject_id     = SelectField("Subject (optional)", coerce=int, validators=[Optional()])
+    semester       = IntegerField("Semester",
+                                  validators=[DataRequired(), NumberRange(min=1, max=12)])
+    academic_year  = StringField("Academic Year (e.g. 2023-24)",
+                                 validators=[Optional(), Length(max=20)])
+    gpa            = FloatField("GPA", validators=[DataRequired(), NumberRange(min=0, max=10)])
+    sgpa           = FloatField("SGPA", validators=[Optional(), NumberRange(min=0, max=10)])
+    cgpa           = FloatField("CGPA", validators=[Optional(), NumberRange(min=0, max=10)])
+    total_credits  = IntegerField("Total Credits", validators=[Optional(), NumberRange(min=0)])
+    earned_credits = IntegerField("Earned Credits", validators=[Optional(), NumberRange(min=0)])
+    backlogs       = IntegerField("Backlogs",
+                                  validators=[Optional(), NumberRange(min=0)], default=0)
+    remarks        = TextAreaField("Remarks", validators=[Optional(), Length(max=500)])
+    submit         = SubmitField("Submit for Approval")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADMIN – ACADEMIC RECORD REJECTION
+# ─────────────────────────────────────────────────────────────────────────────
+
+class RecordRejectionForm(FlaskForm):
+    rejection_reason = TextAreaField("Rejection Reason",
+                                     validators=[DataRequired(), Length(min=5, max=500)])
+    submit = SubmitField("Reject")

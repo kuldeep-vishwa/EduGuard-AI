@@ -24,7 +24,13 @@
 <li class="{{ 'active' if request.endpoint == 'admin.bulk_import' }}">
     <a href="{{ url_for('admin.bulk_import') }}"><i class="bi bi-file-earmark-spreadsheet"></i> Bulk Import</a>
 </li>
-<li class="sidebar-section" style="color:#a78bfa;">AI Features</li>
+<li class="sidebar-section">AI & Risk</li>
+<li class="{{ 'active' if request.endpoint == 'admin.risk_config' }}">
+    <a href="{{ url_for('admin.risk_config') }}"><i class="bi bi-sliders"></i> Risk Configuration</a>
+</li>
+<li class="{{ 'active' if 'record_approval' in request.endpoint }}">
+    <a href="{{ url_for('admin.record_approvals') }}"><i class="bi bi-folder-check"></i> Record Approvals</a>
+</li>
 <li class="{{ 'active' if 'ai' in request.endpoint }}">
     <a href="#" onclick="alert('Select a student from the Students list to view their AI Report.')" style="color:#c4b5fd;">
         <i class="bi bi-cpu"></i> AI Reports

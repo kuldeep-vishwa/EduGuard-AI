@@ -14,9 +14,12 @@ from database import db
 from models import (Faculty, Student, Subject, Unit, Department,
                     Attendance, Assignment, FacultyFeedback, Question,
                     Assessment, AssessmentAttempt, AssessmentAnswer,
-                    FacultySubject, AttendanceStatusEnum, RoleEnum)
+                    FacultySubject, AttendanceStatusEnum, RoleEnum,
+                    AcademicRecordSubmission, RecordStatusEnum,
+                    Notification, NotificationTypeEnum,
+                    NotificationPriorityEnum, FacultyMessage)
 from forms import (AttendanceForm, AssignmentForm, FacultyFeedbackForm,
-                   QuestionForm, AssessmentForm)
+                   QuestionForm, AssessmentForm, AcademicRecordSubmissionForm)
 
 faculty_bp = Blueprint("faculty", __name__, url_prefix="/faculty")
 
@@ -104,6 +107,16 @@ def dashboard():
         assess_labels.append(attempt.assessment.title[:12])
         assess_data.append(attempt.percentage)
 
+    # ── Generate smart notifications (idempotent) ─────────────────────────────
+    from blueprints.notifications.routes import generate_faculty_notifications
+    generate_faculty_notifications(faculty)
+
+    # ── Fetch notifications for bell ──────────────────────────────────────────
+    notifications = (current_user.notifications
+                     .order_by(Notification.created_at.desc())
+                     .limit(20).all())
+    unread_count = current_user.notifications.filter_by(is_read=False).count()
+
     return render_template("faculty/dashboard.html",
                            title="Faculty Dashboard",
                            faculty=faculty,
@@ -118,7 +131,9 @@ def dashboard():
                            att_trend_labels=att_trend_labels,
                            att_trend_data=att_trend_data,
                            assess_labels=assess_labels,
-                           assess_data=assess_data)
+                           assess_data=assess_data,
+                           notifications=notifications,
+                           unread_count=unread_count)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -914,3 +929,220 @@ def export_class_excel():
         as_attachment=True,
         download_name=filename,
     )
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ACADEMIC RECORD SUBMISSIONS
+# ═════════════════════════════════════════════════════════════════════════════
+
+@faculty_bp.route("/academic-records")
+@login_required
+@faculty_required
+def faculty_academic_records():
+    """Faculty views their own submitted academic records and statuses."""
+    faculty = get_current_faculty()
+    submissions = (AcademicRecordSubmission.query
+                   .filter_by(faculty_id=faculty.id)
+                   .order_by(AcademicRecordSubmission.submitted_at.desc())
+                   .all())
+    return render_template("faculty/academic_records.html",
+                           title="Academic Record Submissions",
+                           faculty=faculty,
+                           submissions=submissions,
+                           RecordStatusEnum=RecordStatusEnum)
+
+
+@faculty_bp.route("/academic-records/add", methods=["GET", "POST"])
+@login_required
+@faculty_required
+def add_academic_record():
+    """Faculty submits a new academic record for admin approval."""
+    faculty = get_current_faculty()
+    form = AcademicRecordSubmissionForm()
+
+    # Populate student choices: only students this faculty has taught
+    from sqlalchemy import distinct as sq_distinct
+    student_ids_rows = (db.session.query(sq_distinct(Attendance.student_id))
+                        .filter_by(faculty_id=faculty.id).all())
+    student_ids = [r[0] for r in student_ids_rows]
+    students = Student.query.filter(Student.id.in_(student_ids), Student.is_active == True).all() if student_ids else []
+    form.student_id.choices = [(s.id, f"{s.full_name} ({s.student_id})") for s in students]
+
+    # Populate subject choices: subjects this faculty teaches
+    subjects = [fs.subject for fs in faculty.subjects_taught.all()]
+    form.subject_id.choices = [(0, "— Optional —")] + [(s.id, s.name) for s in subjects]
+
+    if not students:
+        flash("No students found. Mark attendance first to link students.", "warning")
+
+    if form.validate_on_submit():
+        sub = AcademicRecordSubmission(
+            student_id    = form.student_id.data,
+            faculty_id    = faculty.id,
+            subject_id    = form.subject_id.data or None,
+            semester      = form.semester.data,
+            academic_year = form.academic_year.data or None,
+            gpa           = form.gpa.data,
+            sgpa          = form.sgpa.data,
+            cgpa          = form.cgpa.data,
+            total_credits = form.total_credits.data,
+            earned_credits= form.earned_credits.data,
+            backlogs      = form.backlogs.data or 0,
+            remarks       = form.remarks.data or None,
+            status        = RecordStatusEnum.PENDING,
+        )
+        db.session.add(sub)
+        db.session.commit()
+        flash("Academic record submitted for admin approval.", "success")
+        return redirect(url_for("faculty.faculty_academic_records"))
+
+    return render_template("faculty/academic_record_form.html",
+                           title="Submit Academic Record",
+                           form=form,
+                           faculty=faculty)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# MESSAGING  (faculty → student direct messages + broadcast)
+# ═════════════════════════════════════════════════════════════════════════════
+
+def _get_authorized_student_ids(faculty):
+    """Return set of student IDs that this faculty has taught (via attendance)."""
+    from sqlalchemy import distinct as sq_distinct
+    rows = (db.session.query(sq_distinct(Attendance.student_id))
+            .filter_by(faculty_id=faculty.id).all())
+    return {r[0] for r in rows}
+
+
+@faculty_bp.route("/students/<int:student_id>/message", methods=["GET", "POST"])
+@login_required
+@faculty_required
+def send_message(student_id):
+    """Send a direct message to an authorized student."""
+    faculty = get_current_faculty()
+    student = Student.query.get_or_404(student_id)
+
+    # Enforce authorization: only students taught by this faculty
+    authorized_ids = _get_authorized_student_ids(faculty)
+    if student.id not in authorized_ids:
+        flash("You are not authorized to message this student.", "danger")
+        return redirect(url_for("faculty.student_list"))
+
+    if request.method == "POST":
+        subj     = request.form.get("subject", "").strip()
+        body     = request.form.get("body", "").strip()
+        priority = request.form.get("priority", NotificationPriorityEnum.NORMAL)
+
+        if not subj or not body:
+            flash("Subject and message body are required.", "warning")
+        else:
+            msg = FacultyMessage(
+                faculty_id   = faculty.id,
+                student_id   = student.id,
+                subject      = subj,
+                body         = body,
+                priority     = priority,
+                is_broadcast = False,
+            )
+            db.session.add(msg)
+            db.session.flush()
+
+            # Create notification for the student (always unique per message id)
+            notif = Notification(
+                user_id    = student.user_id,
+                title      = f"📩 Message from {faculty.full_name}: {subj}",
+                message    = body[:300],
+                notif_type = NotificationTypeEnum.MESSAGE,
+                priority   = priority,
+                source_key = f"msg:{msg.id}",
+            )
+            db.session.add(notif)
+            db.session.commit()
+
+            flash(f"Message sent to {student.full_name}.", "success")
+            return redirect(url_for("faculty.view_student", student_id=student_id))
+
+    return render_template("faculty/send_message.html",
+                           title=f"Message – {student.full_name}",
+                           faculty=faculty,
+                           student=student,
+                           priorities=NotificationPriorityEnum.ALL)
+
+
+@faculty_bp.route("/broadcast", methods=["GET", "POST"])
+@login_required
+@faculty_required
+def broadcast_notice():
+    """Send a broadcast notice to ALL authorized students of this faculty."""
+    faculty = get_current_faculty()
+
+    if request.method == "POST":
+        subj     = request.form.get("subject", "").strip()
+        body     = request.form.get("body", "").strip()
+        priority = request.form.get("priority", NotificationPriorityEnum.NORMAL)
+
+        if not subj or not body:
+            flash("Subject and message body are required.", "warning")
+        else:
+            authorized_ids = _get_authorized_student_ids(faculty)
+            students = Student.query.filter(
+                Student.id.in_(authorized_ids), Student.is_active == True
+            ).all()
+
+            if not students:
+                flash("No authorized students found to broadcast to.", "warning")
+            else:
+                count = 0
+                for student in students:
+                    msg = FacultyMessage(
+                        faculty_id   = faculty.id,
+                        student_id   = student.id,
+                        subject      = subj,
+                        body         = body,
+                        priority     = priority,
+                        is_broadcast = True,
+                    )
+                    db.session.add(msg)
+                    db.session.flush()
+
+                    notif = Notification(
+                        user_id    = student.user_id,
+                        title      = f"📢 Notice from {faculty.full_name}: {subj}",
+                        message    = body[:300],
+                        notif_type = NotificationTypeEnum.BROADCAST,
+                        priority   = priority,
+                        source_key = f"broadcast:{msg.id}",
+                    )
+                    db.session.add(notif)
+                    count += 1
+
+                db.session.commit()
+                flash(f"Broadcast notice sent to {count} student(s).", "success")
+                return redirect(url_for("faculty.dashboard"))
+
+    authorized_ids = _get_authorized_student_ids(faculty)
+    student_count = Student.query.filter(
+        Student.id.in_(authorized_ids), Student.is_active == True
+    ).count()
+
+    return render_template("faculty/broadcast.html",
+                           title="Broadcast Notice",
+                           faculty=faculty,
+                           student_count=student_count,
+                           priorities=NotificationPriorityEnum.ALL)
+
+
+@faculty_bp.route("/messages")
+@login_required
+@faculty_required
+def sent_messages():
+    """View messages sent by this faculty."""
+    faculty = get_current_faculty()
+    messages = (FacultyMessage.query
+                .filter_by(faculty_id=faculty.id)
+                .order_by(FacultyMessage.sent_at.desc())
+                .limit(50).all())
+    return render_template("faculty/messages.html",
+                           title="Sent Messages",
+                           faculty=faculty,
+                           messages=messages)

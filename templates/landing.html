@@ -1,89 +1,622 @@
 {% extends "base.html" %}
 
+{% block title %}EduGuard AI – Academic Risk Detection & Student Analytics{% endblock %}
+
 {% block body_content %}
-<div class="landing-page">
-    <!-- Hero Section -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="#">
-                <i class="bi bi-shield-check"></i> EduGuard AI
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     LANDING PAGE
+══════════════════════════════════════════════════════════════════════════ -->
+
+<div id="landing-root">
+
+    <!-- ── Top navigation ─────────────────────────────────────────────────── -->
+    <header class="lp-nav">
+        <div class="lp-container lp-nav-inner">
+            <a href="#" class="lp-brand">
+                <span class="lp-brand-shield">
+                    <i class="bi bi-shield-check"></i>
+                </span>
+                <span class="lp-brand-name">EduGuard <span class="lp-brand-ai">AI</span></span>
             </a>
-            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
-                <i class="bi bi-box-arrow-in-right"></i> Login
+            <a href="{{ url_for('auth.login') }}" class="lp-btn-login">
+                Sign In <i class="bi bi-arrow-right ms-1"></i>
             </a>
         </div>
-    </nav>
-    
-    <div class="hero-section">
-        <div class="container">
-            <div class="row align-items-center min-vh-100">
-                <div class="col-lg-6 text-white">
-                    <h1 class="display-3 fw-bold mb-4">EduGuard AI</h1>
-                    <p class="lead mb-4">
-                        AI-Powered Student Early Warning & Academic Risk Detection System
-                    </p>
-                    <p class="mb-5">
-                        Intelligent academic monitoring platform that continuously collects and analyzes academic data 
-                        to identify at-risk students before they fail.
-                    </p>
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
-                        <i class="bi bi-box-arrow-in-right"></i> Get Started
+    </header>
+
+    <!-- ── Hero ───────────────────────────────────────────────────────────── -->
+    <section class="lp-hero">
+        <div class="lp-container lp-hero-inner">
+            <div class="lp-hero-text">
+                <div class="lp-eyebrow">Powered by IBM watsonx.ai</div>
+                <h1 class="lp-headline">
+                    Identify At-Risk Students<br>
+                    <em>Before</em> It's Too Late
+                </h1>
+                <p class="lp-subhead">
+                    EduGuard AI continuously monitors academic performance, attendance,
+                    assessments and feedback — giving faculty and administrators the
+                    intelligence they need to intervene early and help every student succeed.
+                </p>
+                <div class="lp-hero-actions">
+                    <a href="{{ url_for('auth.login') }}" class="lp-btn-primary">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Get Started
                     </a>
+                    <a href="#features" class="lp-btn-ghost">Learn more</a>
                 </div>
-                <div class="col-lg-6">
-                    <div class="card shadow-lg border-0 glass-card">
-                        <div class="card-body p-5">
-                            <h3 class="card-title mb-4">
-                                <i class="bi bi-bar-chart-line text-primary"></i> Key Features
-                            </h3>
-                            <ul class="feature-list">
-                                <li><i class="bi bi-check-circle-fill text-success"></i> Real-time Academic Monitoring</li>
-                                <li><i class="bi bi-check-circle-fill text-success"></i> Attendance Tracking</li>
-                                <li><i class="bi bi-check-circle-fill text-success"></i> Subject-wise Assessments</li>
-                                <li><i class="bi bi-check-circle-fill text-success"></i> Faculty Feedback System</li>
-                                <li><i class="bi bi-check-circle-fill text-success"></i> Assignment Performance Analysis</li>
-                                <li><i class="bi bi-check-circle-fill text-success"></i> Academic Risk Prediction (Phase 2)</li>
-                                <li><i class="bi bi-check-circle-fill text-success"></i> AI-Powered Recommendations (Phase 2)</li>
-                            </ul>
+                <!-- Trust signals -->
+                <div class="lp-trust">
+                    <span><i class="bi bi-check-circle-fill text-success"></i> Role-based access</span>
+                    <span><i class="bi bi-check-circle-fill text-success"></i> AI-powered insights</span>
+                    <span><i class="bi bi-check-circle-fill text-success"></i> Real-time alerts</span>
+                </div>
+            </div>
+
+            <!-- Dashboard mockup panel -->
+            <div class="lp-hero-visual" aria-hidden="true">
+                <div class="lp-mockup">
+                    <div class="lp-mockup-bar">
+                        <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+                        <span class="lp-mockup-url">eduguard.ai / dashboard</span>
+                    </div>
+                    <div class="lp-mockup-body">
+                        <!-- Stat cards row -->
+                        <div class="lp-mc-row">
+                            <div class="lp-mc-card lp-mc-blue">
+                                <div class="lp-mc-val">247</div>
+                                <div class="lp-mc-lbl">Students</div>
+                            </div>
+                            <div class="lp-mc-card lp-mc-green">
+                                <div class="lp-mc-val">86%</div>
+                                <div class="lp-mc-lbl">Avg Attendance</div>
+                            </div>
+                            <div class="lp-mc-card lp-mc-orange">
+                                <div class="lp-mc-val">18</div>
+                                <div class="lp-mc-lbl">High Risk</div>
+                            </div>
+                            <div class="lp-mc-card lp-mc-purple">
+                                <div class="lp-mc-val">3.8</div>
+                                <div class="lp-mc-lbl">Avg GPA</div>
+                            </div>
+                        </div>
+                        <!-- Risk bar -->
+                        <div class="lp-mc-section">
+                            <div class="lp-mc-stitle">Academic Health Distribution</div>
+                            <div class="lp-mc-bar-track">
+                                <div class="lp-mc-bar-seg seg-green" style="width:58%">58% Low</div>
+                                <div class="lp-mc-bar-seg seg-yellow" style="width:27%">27% Med</div>
+                                <div class="lp-mc-bar-seg seg-red" style="width:15%">15% High</div>
+                            </div>
+                        </div>
+                        <!-- Student rows -->
+                        <div class="lp-mc-section">
+                            <div class="lp-mc-stitle">Flagged Students</div>
+                            <div class="lp-mc-srow">
+                                <span class="lp-mc-avatar">A</span>
+                                <span class="lp-mc-name">Alex T.</span>
+                                <span class="lp-mc-score score-red">32/100</span>
+                                <span class="lp-risk-badge badge-red">HIGH</span>
+                            </div>
+                            <div class="lp-mc-srow">
+                                <span class="lp-mc-avatar av-y">J</span>
+                                <span class="lp-mc-name">Jordan M.</span>
+                                <span class="lp-mc-score score-yellow">61/100</span>
+                                <span class="lp-risk-badge badge-yellow">MED</span>
+                            </div>
+                            <div class="lp-mc-srow">
+                                <span class="lp-mc-avatar av-g">P</span>
+                                <span class="lp-mc-name">Priya K.</span>
+                                <span class="lp-mc-score score-green">88/100</span>
+                                <span class="lp-risk-badge badge-green">LOW</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <footer class="py-4 bg-dark text-white text-center">
-        <div class="container">
-            <p class="mb-0">&copy; {{ current_year }} EduGuard AI. All rights reserved.</p>
+    </section>
+
+    <!-- ── Features ───────────────────────────────────────────────────────── -->
+    <section class="lp-features" id="features">
+        <div class="lp-container">
+            <div class="lp-section-label">What EduGuard AI Does</div>
+            <h2 class="lp-section-title">Everything you need to protect student success</h2>
+            <div class="lp-features-grid">
+
+                <div class="lp-feature-card">
+                    <div class="lp-feat-icon lp-fi-blue">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <h3>Academic Health Score</h3>
+                    <p>A single composite score (0–100) calculated from attendance, assessments, assignments, GPA and faculty feedback — updated in real time.</p>
+                </div>
+
+                <div class="lp-feature-card">
+                    <div class="lp-feat-icon lp-fi-purple">
+                        <i class="bi bi-cpu"></i>
+                    </div>
+                    <h3>IBM Granite AI Analysis</h3>
+                    <p>Generates plain-language intervention recommendations for each at-risk student using IBM watsonx.ai Granite models.</p>
+                </div>
+
+                <div class="lp-feature-card">
+                    <div class="lp-feat-icon lp-fi-green">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <h3>Attendance Tracking</h3>
+                    <p>Subject-wise daily attendance recording with automatic percentage calculations and below-threshold alerts.</p>
+                </div>
+
+                <div class="lp-feature-card">
+                    <div class="lp-feat-icon lp-fi-orange">
+                        <i class="bi bi-clipboard2-data"></i>
+                    </div>
+                    <h3>Adaptive Assessments</h3>
+                    <p>Question bank with difficulty tiers. Faculty schedule assessments; students take them online. Results feed directly into risk calculations.</p>
+                </div>
+
+                <div class="lp-feature-card">
+                    <div class="lp-feat-icon lp-fi-teal">
+                        <i class="bi bi-bell"></i>
+                    </div>
+                    <h3>Smart Notifications</h3>
+                    <p>Role-tailored in-app notifications alert students, faculty, and administrators to risk changes, low attendance, and pending actions.</p>
+                </div>
+
+                <div class="lp-feature-card">
+                    <div class="lp-feat-icon lp-fi-indigo">
+                        <i class="bi bi-envelope-paper"></i>
+                    </div>
+                    <h3>Faculty Messaging</h3>
+                    <p>Faculty can send direct messages or broadcast notices to their authorized students — delivered instantly as dashboard notifications.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Roles section ──────────────────────────────────────────────────── -->
+    <section class="lp-roles">
+        <div class="lp-container">
+            <div class="lp-section-label">Three Roles, One Platform</div>
+            <h2 class="lp-section-title">Designed for every stakeholder</h2>
+            <div class="lp-roles-row">
+
+                <div class="lp-role-card">
+                    <div class="lp-role-icon role-admin"><i class="bi bi-shield-lock"></i></div>
+                    <h4>Administrator</h4>
+                    <ul>
+                        <li>Manage departments, subjects, faculty &amp; students</li>
+                        <li>Approve academic records</li>
+                        <li>Configure risk weightages</li>
+                        <li>Bulk import via CSV / XLSX</li>
+                        <li>System-wide risk overview</li>
+                    </ul>
+                </div>
+
+                <div class="lp-role-card lp-role-featured">
+                    <div class="lp-role-icon role-faculty"><i class="bi bi-person-workspace"></i></div>
+                    <h4>Faculty</h4>
+                    <ul>
+                        <li>Mark attendance &amp; record assignments</li>
+                        <li>Build question banks with AI assist</li>
+                        <li>Schedule &amp; review assessments</li>
+                        <li>Submit academic records for approval</li>
+                        <li>Message students &amp; send broadcasts</li>
+                    </ul>
+                </div>
+
+                <div class="lp-role-card">
+                    <div class="lp-role-icon role-student"><i class="bi bi-mortarboard"></i></div>
+                    <h4>Student</h4>
+                    <ul>
+                        <li>View personal Academic Health Score</li>
+                        <li>Take online assessments</li>
+                        <li>Access academic records &amp; GPA history</li>
+                        <li>Read AI-generated improvement plan</li>
+                        <li>Receive faculty messages &amp; notices</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CTA ────────────────────────────────────────────────────────────── -->
+    <section class="lp-cta">
+        <div class="lp-container lp-cta-inner">
+            <h2>Ready to get started?</h2>
+            <p>Log in with your institution credentials to access your dashboard.</p>
+            <a href="{{ url_for('auth.login') }}" class="lp-btn-primary lp-btn-lg">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Login to EduGuard AI
+            </a>
+        </div>
+    </section>
+
+    <!-- ── Footer ─────────────────────────────────────────────────────────── -->
+    <footer class="lp-footer">
+        <div class="lp-container lp-footer-inner">
+            <div class="lp-brand lp-brand-footer">
+                <span class="lp-brand-shield"><i class="bi bi-shield-check"></i></span>
+                <span class="lp-brand-name">EduGuard <span class="lp-brand-ai">AI</span></span>
+            </div>
+            <p class="lp-footer-copy">&copy; {{ current_year }} EduGuard AI. Academic risk detection platform.</p>
         </div>
     </footer>
-</div>
 
+</div><!-- /#landing-root -->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     STYLES
+══════════════════════════════════════════════════════════════════════════ -->
 <style>
-.landing-page {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* ── Reset / base ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+#landing-root {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    color: #1a1d23;
+    background: #ffffff;
+    line-height: 1.6;
 }
-.hero-section {
-    padding-top: 2rem;
+
+.lp-container {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
 }
-.glass-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
+
+/* ── Nav ─────────────────────────────────────────────────────────────────── */
+.lp-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #e8eaf0;
+    padding: .85rem 0;
 }
-.feature-list {
-    list-style: none;
-    padding: 0;
+.lp-nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
-.feature-list li {
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #eee;
+.lp-brand {
+    display: flex; align-items: center; gap: .5rem;
+    text-decoration: none; color: inherit;
 }
-.feature-list li:last-child {
-    border-bottom: none;
+.lp-brand-shield {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1rem;
 }
-.feature-list i {
-    margin-right: 0.75rem;
+.lp-brand-name {
+    font-size: 1.15rem; font-weight: 700; letter-spacing: -.02em;
+}
+.lp-brand-ai { color: #4f46e5; }
+.lp-btn-login {
+    background: #4f46e5;
+    color: white; font-size: .85rem; font-weight: 600;
+    padding: .45rem 1.1rem; border-radius: 6px;
+    text-decoration: none;
+    transition: background .15s;
+}
+.lp-btn-login:hover { background: #3730a3; color: white; }
+
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+.lp-hero {
+    background: linear-gradient(160deg, #f5f4ff 0%, #eef2ff 50%, #f0fdf4 100%);
+    padding: 5rem 0 4.5rem;
+    overflow: hidden;
+}
+.lp-hero-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3.5rem;
+    align-items: center;
+}
+.lp-eyebrow {
+    display: inline-flex; align-items: center;
+    font-size: .8rem; font-weight: 600; letter-spacing: .05em;
+    color: #4f46e5;
+    background: #ede9fe;
+    padding: .25rem .75rem; border-radius: 999px;
+    margin-bottom: 1.25rem;
+}
+.lp-headline {
+    font-size: 2.6rem; font-weight: 800; line-height: 1.15;
+    letter-spacing: -.03em; color: #0f172a;
+    margin-bottom: 1.25rem;
+}
+.lp-headline em {
+    font-style: normal;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.lp-subhead {
+    font-size: 1.05rem; color: #475569; line-height: 1.7;
+    margin-bottom: 2rem;
+}
+.lp-hero-actions {
+    display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
+    margin-bottom: 1.75rem;
+}
+.lp-btn-primary {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white; font-weight: 600; font-size: .95rem;
+    padding: .7rem 1.6rem; border-radius: 8px;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(79,70,229,.25);
+    transition: transform .15s, box-shadow .15s;
+    display: inline-flex; align-items: center;
+}
+.lp-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(79,70,229,.35);
+    color: white;
+}
+.lp-btn-lg { font-size: 1rem; padding: .8rem 2rem; }
+.lp-btn-ghost {
+    color: #4f46e5; font-weight: 600; font-size: .95rem;
+    text-decoration: none;
+    padding: .7rem 1rem;
+    border-radius: 8px;
+    border: 2px solid #c7d2fe;
+    transition: border-color .15s, background .15s;
+}
+.lp-btn-ghost:hover { border-color: #4f46e5; background: #eef2ff; color: #4f46e5; }
+.lp-trust {
+    display: flex; gap: 1.25rem; flex-wrap: wrap;
+    font-size: .82rem; color: #64748b;
+}
+.lp-trust span { display: flex; align-items: center; gap: .35rem; }
+
+/* ── Dashboard Mockup ────────────────────────────────────────────────────── */
+.lp-hero-visual { display: flex; justify-content: flex-end; }
+.lp-mockup {
+    width: 100%; max-width: 460px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+.lp-mockup-bar {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: .55rem .75rem;
+    display: flex; align-items: center; gap: .4rem;
+}
+.dot {
+    width: 10px; height: 10px; border-radius: 50%;
+}
+.dot-r { background: #ff5f57; }
+.dot-y { background: #febc2e; }
+.dot-g { background: #28c840; }
+.lp-mockup-url {
+    margin-left: .5rem;
+    background: #eef2ff;
+    border-radius: 4px;
+    padding: .1rem .6rem;
+    font-size: .72rem; color: #64748b;
+}
+.lp-mockup-body { padding: .9rem; }
+.lp-mc-row {
+    display: grid; grid-template-columns: repeat(4,1fr); gap: .5rem;
+    margin-bottom: .9rem;
+}
+.lp-mc-card {
+    border-radius: 8px; padding: .55rem .5rem;
+    text-align: center;
+}
+.lp-mc-blue   { background: #eff6ff; }
+.lp-mc-green  { background: #f0fdf4; }
+.lp-mc-orange { background: #fff7ed; }
+.lp-mc-purple { background: #faf5ff; }
+.lp-mc-val { font-size: 1.1rem; font-weight: 800; color: #1e293b; }
+.lp-mc-lbl { font-size: .6rem; color: #64748b; white-space: nowrap; }
+.lp-mc-section { margin-bottom: .75rem; }
+.lp-mc-stitle { font-size: .72rem; font-weight: 700; color: #374151; margin-bottom: .4rem; }
+.lp-mc-bar-track {
+    display: flex; border-radius: 6px; overflow: hidden; height: 22px;
+}
+.lp-mc-bar-seg {
+    display: flex; align-items: center; justify-content: center;
+    font-size: .63rem; font-weight: 600; color: white; white-space: nowrap;
+    overflow: hidden;
+}
+.seg-green  { background: #22c55e; }
+.seg-yellow { background: #f59e0b; }
+.seg-red    { background: #ef4444; }
+.lp-mc-srow {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .35rem .2rem; border-bottom: 1px solid #f1f5f9;
+}
+.lp-mc-srow:last-child { border-bottom: none; }
+.lp-mc-avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #c7d2fe; color: #3730a3;
+    font-size: .7rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.av-y { background: #fef3c7; color: #92400e; }
+.av-g { background: #dcfce7; color: #166534; }
+.lp-mc-name { font-size: .78rem; flex: 1; }
+.lp-mc-score { font-size: .75rem; font-weight: 600; }
+.score-red    { color: #dc2626; }
+.score-yellow { color: #d97706; }
+.score-green  { color: #16a34a; }
+.lp-risk-badge {
+    font-size: .58rem; font-weight: 700;
+    padding: .1rem .35rem; border-radius: 3px;
+    flex-shrink: 0;
+}
+.badge-red    { background: #fee2e2; color: #dc2626; }
+.badge-yellow { background: #fef9c3; color: #92400e; }
+.badge-green  { background: #dcfce7; color: #166534; }
+
+/* ── Features ────────────────────────────────────────────────────────────── */
+.lp-features {
+    padding: 5rem 0;
+    background: #ffffff;
+}
+.lp-section-label {
+    font-size: .8rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: #4f46e5;
+    margin-bottom: .6rem;
+}
+.lp-section-title {
+    font-size: 2rem; font-weight: 800; color: #0f172a;
+    letter-spacing: -.02em; margin-bottom: 2.75rem;
+    max-width: 560px;
+}
+.lp-features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+.lp-feature-card {
+    padding: 1.75rem;
+    border: 1px solid #e8eaf0;
+    border-radius: 12px;
+    transition: box-shadow .2s, transform .2s;
+}
+.lp-feature-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,.07);
+    transform: translateY(-2px);
+}
+.lp-feat-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+.lp-fi-blue   { background: #eff6ff; color: #2563eb; }
+.lp-fi-purple { background: #faf5ff; color: #7c3aed; }
+.lp-fi-green  { background: #f0fdf4; color: #16a34a; }
+.lp-fi-orange { background: #fff7ed; color: #ea580c; }
+.lp-fi-teal   { background: #f0fdfa; color: #0d9488; }
+.lp-fi-indigo { background: #eef2ff; color: #4338ca; }
+.lp-feature-card h3 {
+    font-size: 1rem; font-weight: 700; color: #1e293b;
+    margin-bottom: .5rem;
+}
+.lp-feature-card p {
+    font-size: .88rem; color: #64748b; line-height: 1.6;
+}
+
+/* ── Roles ───────────────────────────────────────────────────────────────── */
+.lp-roles {
+    background: #f8f9fc;
+    padding: 5rem 0;
+}
+.lp-roles-row {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+.lp-role-card {
+    background: white;
+    border: 1px solid #e8eaf0;
+    border-radius: 14px;
+    padding: 2rem 1.75rem;
+}
+.lp-role-featured {
+    border-color: #a5b4fc;
+    box-shadow: 0 4px 20px rgba(79,70,229,.12);
+}
+.lp-role-icon {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+}
+.role-admin   { background: #fef3c7; color: #d97706; }
+.role-faculty { background: #ede9fe; color: #6d28d9; }
+.role-student { background: #dbeafe; color: #2563eb; }
+.lp-role-card h4 {
+    font-size: 1.05rem; font-weight: 700; margin-bottom: .85rem; color: #1e293b;
+}
+.lp-role-card ul {
+    list-style: none; padding: 0;
+}
+.lp-role-card ul li {
+    font-size: .875rem; color: #475569;
+    padding: .3rem 0;
+    padding-left: 1.2rem;
+    position: relative;
+}
+.lp-role-card ul li::before {
+    content: "→";
+    position: absolute; left: 0;
+    color: #a5b4fc; font-size: .75rem;
+}
+
+/* ── CTA ─────────────────────────────────────────────────────────────────── */
+.lp-cta {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    padding: 5rem 0;
+    text-align: center;
+}
+.lp-cta-inner h2 {
+    font-size: 2rem; font-weight: 800; color: white;
+    margin-bottom: .75rem;
+}
+.lp-cta-inner p {
+    color: rgba(255,255,255,.8); font-size: 1rem;
+    margin-bottom: 2rem;
+}
+.lp-cta .lp-btn-primary {
+    background: white;
+    color: #4f46e5;
+    box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+.lp-cta .lp-btn-primary:hover {
+    background: #f0f0ff; color: #3730a3;
+    transform: translateY(-1px);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.lp-footer {
+    background: #1e293b;
+    padding: 2rem 0;
+}
+.lp-footer-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem;
+}
+.lp-brand-footer .lp-brand-name,
+.lp-brand-footer .lp-brand-ai { color: #94a3b8; }
+.lp-brand-footer .lp-brand-ai { color: #818cf8; }
+.lp-brand-footer .lp-brand-shield {
+    background: rgba(79,70,229,.3);
+}
+.lp-footer-copy {
+    color: #64748b; font-size: .82rem;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .lp-hero-inner {
+        grid-template-columns: 1fr;
+    }
+    .lp-hero-visual { justify-content: center; }
+    .lp-mockup { max-width: 100%; }
+    .lp-features-grid { grid-template-columns: 1fr 1fr; }
+    .lp-roles-row { grid-template-columns: 1fr; }
+    .lp-headline { font-size: 2rem; }
+}
+@media (max-width: 600px) {
+    .lp-features-grid { grid-template-columns: 1fr; }
+    .lp-headline { font-size: 1.7rem; }
+    .lp-hero { padding: 3rem 0; }
+    .lp-mc-row { grid-template-columns: repeat(2,1fr); }
 }
 </style>
+
 {% endblock %}
